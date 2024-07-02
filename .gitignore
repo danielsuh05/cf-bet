@@ -1,3 +1,7 @@
+# C# build files
+bin/
+obj/
+
 # Logs
 logs
 *.log
