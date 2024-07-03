@@ -1,7 +1,7 @@
 namespace backend.results.codeforces;
 
-public class ContestInfo
+public class ContestListInfo
 {
     public string? Status { get; set; }
-    public ContestResult? Result { get; set; }
+    public List<Contest>? Result { get; set; }
 }

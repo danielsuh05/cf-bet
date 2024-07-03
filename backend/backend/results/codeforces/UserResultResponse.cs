@@ -1,9 +1,9 @@
-namespace backend.results;
+namespace backend.results.codeforces;
 
 public class UserResultResponse
 {
-    public string Status { get; set; }
-    public UserResult[] Result { get; set; }
+    public string? Status { get; set; }
+    public UserResult[]? Result { get; set; }
     
     
 }

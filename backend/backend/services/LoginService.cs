@@ -18,6 +18,12 @@ public class LoginService
         _jwtService = jwtService;
     }
     
+    private async Task<bool> UserExists(string username)
+    {
+        var user = await _context.Users.Find(u => u.Username == username).FirstOrDefaultAsync();
+        return user != null;
+    }
+    
     public async Task<string> Register(string username, string password)
     {
         var response = await CodeforcesApi.GetUserInfo(username);
@@ -26,16 +32,21 @@ public class LoginService
             throw new RestException(HttpStatusCode.Unauthorized, "Error getting data from Codeforces.");
         }
 
-        if (response.Status != "OK" || response.Result.Length > 1)
+        if (response.Status != "OK" || response.Result!.Length > 1)
         {
-            throw new RestException(HttpStatusCode.NotFound, $"Error finding username {username}");
+            throw new RestException(HttpStatusCode.NotFound, $"Error finding username {username}.");
         }
-
+        
         // TODO: add back in
         // if (response.Result[0].FirstName != "cfbet")
         // {
         //     throw new RestException(HttpStatusCode.Unauthorized, "Please set your first name to \"cfbet\" in Codeforces.");
         // }
+
+        if (await UserExists(username))
+        {
+            throw new RestException(HttpStatusCode.Conflict, $"{username} is already registered for cf-bet.");
+        }
 
         string? passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
         var user = new User
@@ -46,7 +57,7 @@ public class LoginService
 
         await _context.Users.InsertOneAsync(user);
 
-        return _jwtService.GenerateToken(user.Id);
+        return _jwtService.GenerateToken(user.Id!);
     }
     
     public async Task<string> Login(string username, string password)
@@ -62,6 +73,6 @@ public class LoginService
             throw new RestException(HttpStatusCode.Unauthorized, "Invalid username or password.");
         }
 
-        return _jwtService.GenerateToken(user.Id);
+        return _jwtService.GenerateToken(user.Id!);
     }
 }

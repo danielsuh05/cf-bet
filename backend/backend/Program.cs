@@ -37,7 +37,7 @@ public static class Program
         {
             try
             {
-                string token = await loginService.Register(request.Username, request.Password);
+                string token = await loginService.Register(request.Username!, request.Password!);
                 return Results.Ok(new { Token = token });
             }
             catch (RestException ex)
@@ -50,7 +50,7 @@ public static class Program
         {
             try
             {
-                var token = await loginService.Login(request.Username, request.Password);
+                string token = await loginService.Login(request.Username!, request.Password!);
                 return Results.Ok(new { Token = token });
             }
             catch (RestException ex)

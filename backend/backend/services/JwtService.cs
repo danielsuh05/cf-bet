@@ -7,15 +7,13 @@ namespace backend.services;
 
 public class JwtService(string? secret)
 {
-    private readonly string? _secret = secret;
-
     public string GenerateToken(string userId)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        byte[] key = Encoding.ASCII.GetBytes(_secret);
+        byte[] key = Encoding.ASCII.GetBytes(secret ?? throw new InvalidOperationException());
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new Claim[]
+            Subject = new ClaimsIdentity(new[]
             {
                 new Claim(ClaimTypes.Name, userId)
             }),

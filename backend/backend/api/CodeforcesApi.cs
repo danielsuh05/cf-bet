@@ -1,4 +1,6 @@
 using backend.results;
+using backend.results.codeforces;
+using backend.utils;
 using Newtonsoft.Json;
 
 namespace backend.api;
@@ -21,30 +23,26 @@ public class CodeforcesApi
         }
         catch (HttpRequestException e)
         {
-            Console.WriteLine("\nException Caught");
-            Console.WriteLine($"Message: {e.Message}");
-            return null;
+            throw new RestException(e.StatusCode, e.Message);
         }
     }
 
-    public static async Task<ContestInfo?> GetContestInfo(int id)
+    public static async Task<ContestListInfo?> GetContestInfo()
     {
         try
         {
             var apiUrl =
-                $"https://codeforces.com/api/contest.standings?contestId={id}&asManager=false&from=1&count=200&showUnofficial=true";
+                $"https://codeforces.com/api/contest.list?gym=false";
             var response = await Client.GetAsync(apiUrl);
             response.EnsureSuccessStatusCode();
             string responseBody = await response.Content.ReadAsStringAsync();
 
-            var apiResponse = JsonConvert.DeserializeObject<ContestInfo>(responseBody);
+            var apiResponse = JsonConvert.DeserializeObject<ContestListInfo>(responseBody);
             return apiResponse;
         }
         catch (HttpRequestException e)
         {
-            Console.WriteLine("\nException Caught");
-            Console.WriteLine($"Message: {e.Message} ");
-            return null;
+            throw new RestException(e.StatusCode, e.Message);
         }
     }
 }
