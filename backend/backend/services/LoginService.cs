@@ -13,7 +13,7 @@ public class LoginService(MongoDBContext context, JwtService jwtService, ICodefo
         var user = await context.Users.Find(u => u.Username == username).FirstOrDefaultAsync();
         return user != null;
     }
-    
+
     public async Task<string> Register(string username, string password)
     {
         var response = await codeforcesClient.GetUserInfo(username);
@@ -22,11 +22,11 @@ public class LoginService(MongoDBContext context, JwtService jwtService, ICodefo
             throw new RestException(HttpStatusCode.Unauthorized, "Error getting data from Codeforces.");
         }
 
-        if (response.Status != "OK" || response.Result!.Length > 1)
+        if (response == null)
         {
             throw new RestException(HttpStatusCode.NotFound, $"Error finding username {username}.");
         }
-        
+
         // TODO: add back in
         // if (response.Result[0].FirstName != "cfbet")
         // {
@@ -49,7 +49,7 @@ public class LoginService(MongoDBContext context, JwtService jwtService, ICodefo
 
         return jwtService.GenerateToken(user.Id!);
     }
-    
+
     public async Task<string> Login(string username, string password)
     {
         var user = await context.Users.Find(u => u.Username == username).FirstOrDefaultAsync();

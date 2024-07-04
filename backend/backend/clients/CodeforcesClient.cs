@@ -8,7 +8,7 @@ namespace backend.clients;
 
 public class CodeforcesClient(HttpClient client) : ICodeforcesClient
 {
-    public async Task<UserResultResponse?> GetUserInfo(string username)
+    public async Task<UserResult?> GetUserInfo(string username)
     {
         try
         {
@@ -18,7 +18,7 @@ public class CodeforcesClient(HttpClient client) : ICodeforcesClient
             string responseBody = await response.Content.ReadAsStringAsync();
 
             var apiResponse = JsonConvert.DeserializeObject<UserResultResponse>(responseBody);
-            return apiResponse;
+            return apiResponse?.Result?[0];
         }
         catch (HttpRequestException e)
         {
@@ -26,7 +26,7 @@ public class CodeforcesClient(HttpClient client) : ICodeforcesClient
         }
     }
 
-    public async Task<ContestListInfo?> GetContestInfo()
+    public async Task<List<Contest?>> GetCurrentContests()
     {
         try
         {
@@ -36,7 +36,7 @@ public class CodeforcesClient(HttpClient client) : ICodeforcesClient
             string responseBody = await response.Content.ReadAsStringAsync();
 
             var apiResponse = JsonConvert.DeserializeObject<ContestListInfo>(responseBody);
-            return apiResponse;
+            return apiResponse?.Result!;
         }
         catch (HttpRequestException e)
         {
@@ -90,14 +90,25 @@ public class CodeforcesClient(HttpClient client) : ICodeforcesClient
     /// <summary>
     /// Gets the top n competitors from a certain contest.
     /// </summary>
-    /// <param name="n">number of competitors to return</param>
-    /// <param name="contest">contest object</param>
+    /// <param name="id">id</param>
     /// <returns>List of the top n competitors</returns>
-    public async Task<List<Competitor>?> GetTopNCompetitors(int n, Contest contest)
+    public async Task<List<Competitor>?> GetTopNCompetitors(int id)
     {
-        var fullUrl = $"https://codeforces.com/contestRegistrants/{contest.Id}?order=BY_RATING_DESC";
-        string response = await client.GetStringAsync(fullUrl);
+        try
+        {
+            var fullUrl = $"https://codeforces.com/contestRegistrants/{id}?order=BY_RATING_DESC";
+            var response = await client.GetAsync(fullUrl);
+            response.EnsureSuccessStatusCode();
+            string responseBody = await response.Content.ReadAsStringAsync();
 
-        return ParseContestRegistrantHtml(response, n);
+            // max value is 250
+            const int n = 250;
+
+            return ParseContestRegistrantHtml(responseBody, n);
+        }
+        catch (HttpRequestException e)
+        {
+            throw new RestException(e.StatusCode, e.Message);
+        }
     }
 }

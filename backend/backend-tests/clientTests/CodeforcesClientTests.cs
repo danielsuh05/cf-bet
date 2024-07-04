@@ -51,9 +51,7 @@ namespace backend_tests.clientTests
             var result = await _codeforcesClient.GetUserInfo(username);
 
             result.Should().NotBeNull();
-            result.Status.Should().Be("OK");
-            result.Result.Should().HaveCount(1);
-            result.Result[0].Handle!.ToLower().Should().Be(username);
+            result.Handle!.ToLower().Should().Be(username);
         }
 
         [Test]
@@ -75,18 +73,5 @@ namespace backend_tests.clientTests
         }
 
         // TODO: Add contest tests
-        [Test]
-        public async Task GetTopNCompetitors_ReturnsCompetitors_OnSuccess()
-        {
-            var client = new CodeforcesClient(new HttpClient());
-            var contest = new Contest
-            {
-                Id = 1983
-            };
-
-            var result = await client.GetTopNCompetitors(10, contest);
-
-            result.Should().HaveCount(10);
-        }
     }
 }

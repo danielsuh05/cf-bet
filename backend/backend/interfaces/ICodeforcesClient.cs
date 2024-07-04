@@ -4,9 +4,9 @@ namespace backend.interfaces;
 
 public interface ICodeforcesClient
 {
-    public Task<UserResultResponse?> GetUserInfo(string username);
+    public Task<UserResult?> GetUserInfo(string username);
 
-    public Task<ContestListInfo?> GetContestInfo();
+    public Task<List<Contest?>> GetCurrentContests();
 
-    public Task<List<Competitor>?> GetTopNCompetitors(int n, Contest contest);
+    public Task<List<Competitor>?> GetTopNCompetitors(int id);
 }

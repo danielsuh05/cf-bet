@@ -11,15 +11,35 @@ public class ContestService(ICodeforcesClient codeforcesClient)
     {
         try
         {
-            var response = await codeforcesClient.GetContestInfo();
-            
-            if (response == null || response.Status != "OK")
+            var response = await codeforcesClient.GetCurrentContests();
+
+            var activeContests = response.Where(contest => contest!.Phase == "BEFORE").ToList();
+            return activeContests!;
+        }
+        catch (RestException e)
+        {
+            Console.WriteLine($"Error: {e.Code} - {e.ErrorMessage}");
+            return null;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Unexpected error: {e.Message}");
+            return null;
+        }
+    }
+
+    public async Task<List<Competitor>?> GetTopCompetitors(int contest)
+    {
+        try
+        {
+            var response = await codeforcesClient.GetTopNCompetitors(contest);
+
+            if (response == null)
             {
-                throw new RestException(HttpStatusCode.NotFound, "Failed to retrieve contest information"); 
+                throw new RestException(HttpStatusCode.NotFound, "Failed to retrieve the top competitors");
             }
 
-            var activeContests = response.Result?.Where(contest => contest.Phase == "BEFORE").ToList();
-            return activeContests;
+            return response;
         }
         catch (RestException e)
         {

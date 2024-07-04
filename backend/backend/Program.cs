@@ -1,7 +1,12 @@
+using System.Net;
+using backend.clients;
+using backend.interfaces;
+using backend.results.codeforces;
 using backend.results.db;
 using backend.services;
 using backend.utils;
 using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Mvc;
 
 namespace backend;
 
@@ -18,9 +23,16 @@ public static class Program
         string? mongoConnectionString = Environment.GetEnvironmentVariable("MONGO_CONNECTION_STRING");
         string? mongoDatabaseName = Environment.GetEnvironmentVariable("MONGO_DATABASE_NAME");
         string? jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+        var client = new HttpClient();
 
         builder.Services.AddSingleton(new MongoDBContext(mongoConnectionString, mongoDatabaseName));
         builder.Services.AddSingleton(new JwtService(jwtSecret));
+        builder.Services.AddSingleton(new CodeforcesClient(client));
+
+        builder.Services.AddHttpClient();
+        builder.Services.AddSingleton<ICodeforcesClient, CodeforcesClient>();
+
+        builder.Services.AddScoped<ContestService>();
         builder.Services.AddScoped<LoginService>();
 
         builder.Services.AddEndpointsApiExplorer();
@@ -42,10 +54,10 @@ public static class Program
             }
             catch (RestException ex)
             {
-                return Results.Problem(ex.Message, statusCode: (int)ex.Code);
+                return Results.Problem(ex.Message, statusCode: (int)ex.Code!);
             }
         });
-        
+
         app.MapPost("/login", async (LoginService loginService, UserLoginRequest request) =>
         {
             try
@@ -55,7 +67,20 @@ public static class Program
             }
             catch (RestException ex)
             {
-                return Results.Problem(ex.Message, statusCode: (int)ex.Code);
+                return Results.Problem(ex.Message, statusCode: (int)ex.Code!);
+            }
+        });
+
+        app.MapGet("/contests/{id:int}", async (int id, ContestService contestService) =>
+        {
+            try
+            {
+                var competitors = await contestService.GetTopCompetitors(id);
+                return Results.Ok(new { Competitors = competitors });
+            }
+            catch (RestException ex)
+            {
+                return Results.Problem(ex.Message, statusCode: (int)ex.Code!);
             }
         });
 

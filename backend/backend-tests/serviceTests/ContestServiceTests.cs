@@ -33,7 +33,7 @@ namespace backend_tests.serviceTests
                 }
             };
 
-            _codeforcesClientMock.Setup(client => client.GetContestInfo())
+            _codeforcesClientMock.Setup(client => client.GetCurrentContests())
                 .ReturnsAsync(contestListResponse);
 
             var result = await _contestService.GetActiveContests();
@@ -47,7 +47,7 @@ namespace backend_tests.serviceTests
         [Test]
         public async Task GetActiveContests_ThrowsRestException_OnFailedResponse()
         {
-            _codeforcesClientMock.Setup(client => client.GetContestInfo())
+            _codeforcesClientMock.Setup(client => client.GetCurrentContests())
                 .ReturnsAsync((ContestListInfo?)null);
 
             var result = await _contestService.GetActiveContests();
@@ -64,7 +64,7 @@ namespace backend_tests.serviceTests
                 Result = null
             };
 
-            _codeforcesClientMock.Setup(client => client.GetContestInfo())
+            _codeforcesClientMock.Setup(client => client.GetCurrentContests())
                 .ReturnsAsync(contestListResponse);
 
             var result = await _contestService.GetActiveContests();
@@ -75,7 +75,7 @@ namespace backend_tests.serviceTests
         [Test]
         public async Task GetActiveContests_ReturnsNull_OnUnexpectedException()
         {
-            _codeforcesClientMock.Setup(client => client.GetContestInfo())
+            _codeforcesClientMock.Setup(client => client.GetCurrentContests())
                 .ThrowsAsync(new Exception("Unexpected error"));
 
             var result = await _contestService.GetActiveContests();
