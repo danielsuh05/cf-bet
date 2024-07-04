@@ -1,17 +1,17 @@
 using System.Net;
-using backend.api;
+using backend.interfaces;
 using backend.results.codeforces;
 using backend.utils;
 
 namespace backend.services;
 
-public class ContestService
+public class ContestService(ICodeforcesClient codeforcesClient)
 {
-    public static async Task<List<Contest>?> GetActiveContests()
+    public async Task<List<Contest>?> GetActiveContests()
     {
         try
         {
-            var response = await CodeforcesApi.GetContestInfo(); 
+            var response = await codeforcesClient.GetContestInfo();
             
             if (response == null || response.Status != "OK")
             {
@@ -23,7 +23,7 @@ public class ContestService
         }
         catch (RestException e)
         {
-            Console.WriteLine($"Error: {e.Code} - {e.Message}");
+            Console.WriteLine($"Error: {e.Code} - {e.ErrorMessage}");
             return null;
         }
         catch (Exception e)

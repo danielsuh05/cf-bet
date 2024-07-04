@@ -1,3 +1,4 @@
+using backend.interfaces;
 using backend.results;
 using backend.results.codeforces;
 using backend.utils;
@@ -5,16 +6,14 @@ using Newtonsoft.Json;
 
 namespace backend.api;
 
-public class CodeforcesApi
+public class CodeforcesClient(HttpClient client) : ICodeforcesClient
 {
-    private static readonly HttpClient Client = new HttpClient(); 
-    
-    public static async Task<UserResultResponse?> GetUserInfo(string username)
+    public async Task<UserResultResponse?> GetUserInfo(string username)
     {
         try
         {
             var apiUrl = $"https://codeforces.com/api/user.info?handles={username}";
-            var response = await Client.GetAsync(apiUrl);
+            var response = await client.GetAsync(apiUrl);
             response.EnsureSuccessStatusCode();
             string responseBody = await response.Content.ReadAsStringAsync();
 
@@ -27,13 +26,12 @@ public class CodeforcesApi
         }
     }
 
-    public static async Task<ContestListInfo?> GetContestInfo()
+    public async Task<ContestListInfo?> GetContestInfo()
     {
         try
         {
-            var apiUrl =
-                $"https://codeforces.com/api/contest.list?gym=false";
-            var response = await Client.GetAsync(apiUrl);
+            const string apiUrl = $"https://codeforces.com/api/contest.list?gym=false";
+            var response = await client.GetAsync(apiUrl);
             response.EnsureSuccessStatusCode();
             string responseBody = await response.Content.ReadAsStringAsync();
 

@@ -5,5 +5,5 @@ namespace backend.utils;
 public class RestException(HttpStatusCode? code, string? errorMessage = "") : Exception
 {
     public string? ErrorMessage { get; } = errorMessage;
-    public HttpStatusCode Code { get; } = code;
+    public HttpStatusCode? Code { get; } = code;
 }

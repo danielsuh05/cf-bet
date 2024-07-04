@@ -1,32 +1,22 @@
 using System.Net;
-using backend.api;
-using backend.results;
+using backend.interfaces;
 using backend.results.db;
 using backend.utils;
 using MongoDB.Driver;
 
 namespace backend.services;
 
-public class LoginService
+public class LoginService(MongoDBContext context, JwtService jwtService, ICodeforcesClient codeforcesClient)
 {
-    private readonly MongoDBContext _context;
-    private readonly JwtService _jwtService;
-
-    public LoginService(MongoDBContext context, JwtService jwtService)
-    {
-        _context = context;
-        _jwtService = jwtService;
-    }
-    
     private async Task<bool> UserExists(string username)
     {
-        var user = await _context.Users.Find(u => u.Username == username).FirstOrDefaultAsync();
+        var user = await context.Users.Find(u => u.Username == username).FirstOrDefaultAsync();
         return user != null;
     }
     
     public async Task<string> Register(string username, string password)
     {
-        var response = await CodeforcesApi.GetUserInfo(username);
+        var response = await codeforcesClient.GetUserInfo(username);
         if (response == null)
         {
             throw new RestException(HttpStatusCode.Unauthorized, "Error getting data from Codeforces.");
@@ -55,14 +45,14 @@ public class LoginService
             PasswordHash = passwordHash
         };
 
-        await _context.Users.InsertOneAsync(user);
+        await context.Users.InsertOneAsync(user);
 
-        return _jwtService.GenerateToken(user.Id!);
+        return jwtService.GenerateToken(user.Id!);
     }
     
     public async Task<string> Login(string username, string password)
     {
-        var user = await _context.Users.Find(u => u.Username == username).FirstOrDefaultAsync();
+        var user = await context.Users.Find(u => u.Username == username).FirstOrDefaultAsync();
         if (user == null)
         {
             throw new RestException(HttpStatusCode.Unauthorized, "Invalid username or password.");
@@ -73,6 +63,6 @@ public class LoginService
             throw new RestException(HttpStatusCode.Unauthorized, "Invalid username or password.");
         }
 
-        return _jwtService.GenerateToken(user.Id!);
+        return jwtService.GenerateToken(user.Id!);
     }
 }
