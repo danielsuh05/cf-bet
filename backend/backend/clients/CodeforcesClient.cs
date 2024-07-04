@@ -1,10 +1,10 @@
 using backend.interfaces;
-using backend.results;
 using backend.results.codeforces;
 using backend.utils;
+using HtmlAgilityPack;
 using Newtonsoft.Json;
 
-namespace backend.api;
+namespace backend.clients;
 
 public class CodeforcesClient(HttpClient client) : ICodeforcesClient
 {
@@ -42,5 +42,62 @@ public class CodeforcesClient(HttpClient client) : ICodeforcesClient
         {
             throw new RestException(e.StatusCode, e.Message);
         }
+    }
+
+    /// <summary>
+    /// Get the top n competitors using web scraping from the contestRegistrants Codeforces HTML Document.
+    /// </summary>
+    /// <param name="html">string containing the HTML Document for contestRegistrants</param>
+    /// <param name="n">how many competitors to return</param>
+    /// <returns>list of the top n competitors</returns>
+    private List<Competitor> ParseContestRegistrantHtml(string html, int n)
+    {
+        var document = new HtmlDocument();
+        document.LoadHtml(html);
+
+        var topCompetitors = new List<Competitor>();
+
+        var table = document.DocumentNode.SelectSingleNode("//table[@class='registrants']");
+        if (table == null) return [];
+        var rows = table.SelectNodes("tr");
+        if (rows == null) return [];
+        var numContestants = 0;
+        foreach (var row in rows.Skip(1)) // Skip the header row
+        {
+            if (numContestants == n) break;
+            numContestants++;
+
+            var cells = row.SelectNodes("td");
+            if (cells == null || cells.Count < 3) continue;
+            var usernameNode = cells[1].SelectSingleNode("a");
+            var ratingNode = cells[2];
+
+            if (usernameNode == null || ratingNode == null) continue;
+            string username = usernameNode.InnerText.Trim();
+            int rating = int.Parse(ratingNode.InnerText.Trim());
+
+            var curCompetitor = new Competitor
+            {
+                Handle = username,
+                Ranking = rating
+            };
+            topCompetitors.Add(curCompetitor);
+        }
+
+        return topCompetitors;
+    }
+
+    /// <summary>
+    /// Gets the top n competitors from a certain contest.
+    /// </summary>
+    /// <param name="n">number of competitors to return</param>
+    /// <param name="contest">contest object</param>
+    /// <returns>List of the top n competitors</returns>
+    public async Task<List<Competitor>?> GetTopNCompetitors(int n, Contest contest)
+    {
+        var fullUrl = $"https://codeforces.com/contestRegistrants/{contest.Id}?order=BY_RATING_DESC";
+        string response = await client.GetStringAsync(fullUrl);
+
+        return ParseContestRegistrantHtml(response, n);
     }
 }

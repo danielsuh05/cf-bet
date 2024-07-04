@@ -1,5 +1,5 @@
 using System.Net;
-using backend.api;
+using backend.clients;
 using backend.interfaces;
 using backend.results.codeforces;
 using backend.utils;
@@ -32,7 +32,8 @@ namespace backend_tests.clientTests
             var userResultResponse = new UserResultResponse
             {
                 Status = "OK",
-                Result = new UserResult[] { new UserResult { FirstName = "daniel", LastName = "suh", Handle = username } }
+                Result = new UserResult[]
+                    { new UserResult { FirstName = "daniel", LastName = "suh", Handle = username } }
             };
 
             _handlerMock.Protected()
@@ -74,5 +75,18 @@ namespace backend_tests.clientTests
         }
 
         // TODO: Add contest tests
+        [Test]
+        public async Task GetTopNCompetitors_ReturnsCompetitors_OnSuccess()
+        {
+            var client = new CodeforcesClient(new HttpClient());
+            var contest = new Contest
+            {
+                Id = 1983
+            };
+
+            var result = await client.GetTopNCompetitors(10, contest);
+
+            result.Should().HaveCount(10);
+        }
     }
 }

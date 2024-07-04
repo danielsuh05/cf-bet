@@ -27,9 +27,9 @@ namespace backend_tests.serviceTests
                 Status = "OK",
                 Result = new List<Contest>
                 {
-                    new Contest { Id = 1, Name = "Contest 1", Phase = "BEFORE" },
-                    new Contest { Id = 2, Name = "Contest 2", Phase = "FINISHED" },
-                    new Contest { Id = 3, Name = "Contest 3", Phase = "BEFORE" }
+                    new() { Id = 1, Name = "Contest 1", Phase = "BEFORE" },
+                    new() { Id = 2, Name = "Contest 2", Phase = "FINISHED" },
+                    new() { Id = 3, Name = "Contest 3", Phase = "BEFORE" }
                 }
             };
 
