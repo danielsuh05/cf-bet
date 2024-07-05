@@ -13,5 +13,5 @@ public class MongoDBContext
         _database = client.GetDatabase(databaseName);
     }
 
-    public IMongoCollection<User> Users => _database.GetCollection<User>("Users");
+    public IMongoCollection<UserSchema> Users => _database.GetCollection<UserSchema>("Users");
 }

@@ -39,7 +39,7 @@ public class LoginService(MongoDBContext context, JwtService jwtService, ICodefo
         }
 
         string? passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
-        var user = new User
+        var user = new UserSchema
         {
             Username = username,
             PasswordHash = passwordHash
