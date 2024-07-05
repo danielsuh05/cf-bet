@@ -1,12 +1,8 @@
-using System.Net;
 using backend.clients;
 using backend.interfaces;
-using backend.results.codeforces;
 using backend.results.db;
 using backend.services;
 using backend.utils;
-using Microsoft.AspNetCore.Identity.Data;
-using Microsoft.AspNetCore.Mvc;
 
 namespace backend;
 
@@ -27,10 +23,12 @@ public static class Program
 
         builder.Services.AddSingleton(new MongoDBContext(mongoConnectionString, mongoDatabaseName));
         builder.Services.AddSingleton(new JwtService(jwtSecret));
-        builder.Services.AddSingleton(new CodeforcesClient(client));
 
         builder.Services.AddHttpClient();
         builder.Services.AddSingleton<ICodeforcesClient, CodeforcesClient>();
+        builder.Services.AddSingleton<IBetClient, CompeteBetClient>();
+        builder.Services.AddSingleton<IBetClient, OutrightWinnerBetClient>();
+        builder.Services.AddSingleton<IBetClient, TopNBetClient>();
 
         builder.Services.AddScoped<ContestService>();
         builder.Services.AddScoped<LoginService>();
@@ -71,7 +69,7 @@ public static class Program
             }
         });
 
-        app.MapGet("/contests/{id:int}", async (int id, ContestService contestService) =>
+        app.MapGet("/contests/{id:int}", async (ContestService contestService, int id) =>
         {
             try
             {
@@ -83,6 +81,14 @@ public static class Program
                 return Results.Problem(ex.Message, statusCode: (int)ex.Code!);
             }
         });
+
+        app.MapPost("/winner", async (CompeteBetClient client) =>
+        {
+            try
+            {
+                var test = client.PlaceBet();
+            }
+        })
 
         app.UseHttpsRedirection();
         app.Run();

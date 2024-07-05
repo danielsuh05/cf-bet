@@ -6,5 +6,5 @@ public interface IBetClient
 {
     void PlaceBet();
 
-    BetResult GetBetInfo(string id);
+    BetResult GetBetInfo();
 }
