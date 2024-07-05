@@ -22,19 +22,15 @@ namespace backend_tests.serviceTests
         [Test]
         public async Task GetActiveContests_ReturnsActiveContests_OnSuccess()
         {
-            var contestListResponse = new ContestListInfo
+            var contestList = new List<Contest>
             {
-                Status = "OK",
-                Result = new List<Contest>
-                {
-                    new() { Id = 1, Name = "Contest 1", Phase = "BEFORE" },
-                    new() { Id = 2, Name = "Contest 2", Phase = "FINISHED" },
-                    new() { Id = 3, Name = "Contest 3", Phase = "BEFORE" }
-                }
+                new() { Id = 1, Name = "Contest 1", Phase = "BEFORE" },
+                new() { Id = 2, Name = "Contest 2", Phase = "FINISHED" },
+                new() { Id = 3, Name = "Contest 3", Phase = "BEFORE" }
             };
 
-            _codeforcesClientMock.Setup(client => client.GetCurrentContests())
-                .ReturnsAsync(contestListResponse);
+            _codeforcesClientMock.Setup(client => client.GetCurrentContests())!
+                .ReturnsAsync(contestList);
 
             var result = await _contestService.GetActiveContests();
 
@@ -47,8 +43,8 @@ namespace backend_tests.serviceTests
         [Test]
         public async Task GetActiveContests_ThrowsRestException_OnFailedResponse()
         {
-            _codeforcesClientMock.Setup(client => client.GetCurrentContests())
-                .ReturnsAsync((ContestListInfo?)null);
+            _codeforcesClientMock.Setup(client => client.GetCurrentContests())!
+                .ReturnsAsync((List<Contest>?)null);
 
             var result = await _contestService.GetActiveContests();
 
@@ -58,14 +54,10 @@ namespace backend_tests.serviceTests
         [Test]
         public async Task GetActiveContests_ThrowsRestException_OnErrorResponse()
         {
-            var contestListResponse = new ContestListInfo
-            {
-                Status = "FAILED",
-                Result = null
-            };
+            List<Contest?>? contestList = null;
 
-            _codeforcesClientMock.Setup(client => client.GetCurrentContests())
-                .ReturnsAsync(contestListResponse);
+            _codeforcesClientMock.Setup(client => client.GetCurrentContests())!
+                .ReturnsAsync(contestList);
 
             var result = await _contestService.GetActiveContests();
 
