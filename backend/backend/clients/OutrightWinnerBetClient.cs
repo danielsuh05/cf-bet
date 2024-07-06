@@ -7,12 +7,12 @@ public class OutrightWinnerBetClient(string handle) : IBetClient
 {
     private string _handle = handle;
 
-    public void PlaceBet()
+    public Task<BetResult> PlaceBet()
     {
         throw new NotImplementedException();
     }
 
-    public BetResult GetBetInfo()
+    public Task<BetResult> GetBetInfo()
     {
         throw new NotImplementedException();
     }

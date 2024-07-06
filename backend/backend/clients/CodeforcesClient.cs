@@ -101,7 +101,7 @@ public class CodeforcesClient(HttpClient client) : ICodeforcesClient
             response.EnsureSuccessStatusCode();
             string responseBody = await response.Content.ReadAsStringAsync();
 
-            // max value is 250
+            // number of competitors to return
             const int n = 250;
 
             return ParseContestRegistrantHtml(responseBody, n);

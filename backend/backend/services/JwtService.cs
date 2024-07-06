@@ -9,18 +9,22 @@ public class JwtService(string? secret)
 {
     public string GenerateToken(string userId)
     {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        byte[] key = Encoding.ASCII.GetBytes(secret ?? throw new InvalidOperationException());
-        var tokenDescriptor = new SecurityTokenDescriptor
+        var claims = new List<Claim>
         {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.Name, userId)
-            }),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            new Claim(ClaimTypes.NameIdentifier, userId)
         };
 
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
+        Console.WriteLine("secret lmao: " + secret);
+
+        var jwtToken = new JwtSecurityToken(
+            claims: claims,
+            notBefore: DateTime.UtcNow,
+            expires: DateTime.Now.AddDays(30),
+            signingCredentials: new SigningCredentials(
+                new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(secret!)
+                ), SecurityAlgorithms.HmacSha256Signature));
+
+        return new JwtSecurityTokenHandler().WriteToken(jwtToken);
     }
 }

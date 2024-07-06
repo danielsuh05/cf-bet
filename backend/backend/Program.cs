@@ -1,8 +1,13 @@
+using System.Text;
 using backend.clients;
 using backend.interfaces;
 using backend.results.db;
+using backend.results.requests;
 using backend.services;
 using backend.utils;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
 
 namespace backend;
 
@@ -19,16 +24,36 @@ public static class Program
         string? mongoConnectionString = Environment.GetEnvironmentVariable("MONGO_CONNECTION_STRING");
         string? mongoDatabaseName = Environment.GetEnvironmentVariable("MONGO_DATABASE_NAME");
         string? jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
-        var client = new HttpClient();
+
+        builder.Services.AddAuthentication(cfg =>
+        {
+            cfg.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            cfg.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            cfg.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        }).AddJwtBearer(x =>
+        {
+            x.RequireHttpsMetadata = false;
+            x.SaveToken = false;
+            x.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8
+                        .GetBytes(jwtSecret!)
+                ),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero
+            };
+        });
+
+        builder.Services.AddAuthorization();
 
         builder.Services.AddSingleton(new MongoDBContext(mongoConnectionString, mongoDatabaseName));
         builder.Services.AddSingleton(new JwtService(jwtSecret));
 
         builder.Services.AddHttpClient();
-        builder.Services.AddSingleton<ICodeforcesClient, CodeforcesClient>();
-        builder.Services.AddSingleton<IBetClient, CompeteBetClient>();
-        builder.Services.AddSingleton<IBetClient, OutrightWinnerBetClient>();
-        builder.Services.AddSingleton<IBetClient, TopNBetClient>();
+        builder.Services.AddSingleton<CodeforcesClient>();
 
         builder.Services.AddScoped<ContestService>();
         builder.Services.AddScoped<LoginService>();
@@ -43,18 +68,22 @@ public static class Program
             app.UseSwaggerUI();
         }
 
-        app.MapPost("/register", async (LoginService loginService, UserLoginRequest request) =>
-        {
-            try
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        app.MapPost(
+            "/register", async (LoginService loginService, UserLoginRequest request) =>
             {
-                string token = await loginService.Register(request.Username!, request.Password!);
-                return Results.Ok(new { Token = token });
-            }
-            catch (RestException ex)
-            {
-                return Results.Problem(ex.Message, statusCode: (int)ex.Code!);
-            }
-        });
+                try
+                {
+                    string token = await loginService.Register(request.Username!, request.Password!);
+                    return Results.Ok(new { Token = token });
+                }
+                catch (RestException ex)
+                {
+                    return Results.Problem(ex.Message, statusCode: (int)ex.Code!);
+                }
+            });
 
         app.MapPost("/login", async (LoginService loginService, UserLoginRequest request) =>
         {
@@ -82,13 +111,12 @@ public static class Program
             }
         });
 
-        app.MapPost("/winner", async (CompeteBetClient client) =>
+        app.MapPost("/bet", async (BetRequest request) =>
         {
-            try
-            {
-                var test = client.PlaceBet();
-            }
-        })
+            var service = new BetService(request);
+            var result = await service.PlaceBet();
+            return result;
+        }).RequireAuthorization();
 
         app.UseHttpsRedirection();
         app.Run();

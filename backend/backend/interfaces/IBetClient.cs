@@ -4,7 +4,7 @@ namespace backend.interfaces;
 
 public interface IBetClient
 {
-    void PlaceBet();
+    Task<BetResult> PlaceBet();
 
-    BetResult GetBetInfo();
+    Task<BetResult> GetBetInfo();
 }

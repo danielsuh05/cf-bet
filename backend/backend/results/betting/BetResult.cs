@@ -8,3 +8,10 @@ public class BetResult(int initialBet, bool hit, int profitLoss, BetType betType
     public BetType BetType = betType;
     public string BetString = betString;
 }
+
+public enum BetType
+{
+    OutrightWinner,
+    TopN,
+    Compete
+}

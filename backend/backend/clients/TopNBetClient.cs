@@ -3,17 +3,17 @@ using backend.results.betting;
 
 namespace backend.clients;
 
-public class TopNBetClient(string handle, int n) : IBetClient
+public class TopNBetClient(string handle, int? n) : IBetClient
 {
     private string _handle = handle;
-    private int _n = n;
+    private int? _n = n;
 
-    public void PlaceBet()
+    public Task<BetResult> PlaceBet()
     {
         throw new NotImplementedException();
     }
 
-    public BetResult GetBetInfo()
+    public Task<BetResult> GetBetInfo()
     {
         throw new NotImplementedException();
     }

@@ -13,12 +13,12 @@ public class CompeteBetClient(string handle1, string handle2) : IBetClient
     private string _handle1 = handle1;
     private string _handle2 = handle2;
 
-    public void PlaceBet()
+    public Task<BetResult> PlaceBet()
     {
         throw new NotImplementedException();
     }
 
-    public BetResult GetBetInfo()
+    public Task<BetResult> GetBetInfo()
     {
         throw new NotImplementedException();
     }

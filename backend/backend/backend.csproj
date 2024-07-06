@@ -12,6 +12,7 @@
         <PackageReference Include="BCrypt.Net-Next" Version="4.0.3"/>
         <PackageReference Include="FluentAssertions" Version="7.0.0-alpha.4"/>
         <PackageReference Include="HtmlAgilityPack" Version="1.11.61"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.6"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0"/>
         <PackageReference Include="MongoDB.Driver" Version="2.27.0"/>
