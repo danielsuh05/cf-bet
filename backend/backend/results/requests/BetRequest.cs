@@ -5,7 +5,8 @@ namespace backend.results.requests;
 public class BetRequest
 {
     public BetType BetType { get; set; }
-    public string? Username { get; set; }
+    public string? UserId { get; set; }
+    public int contestId { get; set; }
     public decimal InitialBet { get; set; }
 
     // compete bet request

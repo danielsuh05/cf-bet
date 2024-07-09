@@ -8,6 +8,7 @@ using backend.utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 namespace backend;
 
@@ -53,13 +54,40 @@ public static class Program
         builder.Services.AddSingleton(new JwtService(jwtSecret));
 
         builder.Services.AddHttpClient();
-        builder.Services.AddSingleton<CodeforcesClient>();
+        builder.Services.AddSingleton<ICodeforcesClient, CodeforcesClient>();
 
         builder.Services.AddScoped<ContestService>();
         builder.Services.AddScoped<LoginService>();
 
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddSwaggerGen(opt =>
+        {
+            opt.SwaggerDoc("v1", new OpenApiInfo { Title = "MyAPI", Version = "v1" });
+            opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                In = ParameterLocation.Header,
+                Description = "Please enter token",
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                BearerFormat = "JWT",
+                Scheme = "bearer"
+            });
+
+            opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    new string[] { }
+                }
+            });
+        });
         var app = builder.Build();
 
         if (app.Environment.IsDevelopment())
@@ -111,12 +139,18 @@ public static class Program
             }
         });
 
-        app.MapPost("/bet", async (BetRequest request) =>
-        {
-            var service = new BetService(request);
-            var result = await service.PlaceBet();
-            return result;
-        }).RequireAuthorization();
+        app.MapPost("/bet",
+            async (ContestService ContestService, HttpRequest request, JwtService jwtService, BetRequest betRequest) =>
+            {
+                string token = request.Headers.Authorization.ToString().Replace("Bearer ", "");
+
+                betRequest.UserId = jwtService.GetUserId(token);
+
+                var service = new BetService(ContestService, betRequest);
+                var result = await service.PlaceBet();
+
+                return result;
+            }).RequireAuthorization();
 
         app.UseHttpsRedirection();
         app.Run();

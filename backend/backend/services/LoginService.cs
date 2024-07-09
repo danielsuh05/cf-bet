@@ -42,12 +42,13 @@ public class LoginService(MongoDBContext context, JwtService jwtService, ICodefo
         var user = new UserSchema
         {
             Username = username,
-            PasswordHash = passwordHash
+            PasswordHash = passwordHash,
+            MoneyBalance = 1_000
         };
 
         await context.Users.InsertOneAsync(user);
 
-        return jwtService.GenerateToken(user.Id!);
+        return jwtService.GenerateToken(user);
     }
 
     public async Task<string> Login(string username, string password)
@@ -63,6 +64,6 @@ public class LoginService(MongoDBContext context, JwtService jwtService, ICodefo
             throw new RestException(HttpStatusCode.Unauthorized, "Invalid username or password.");
         }
 
-        return jwtService.GenerateToken(user.Id!);
+        return jwtService.GenerateToken(user);
     }
 }
