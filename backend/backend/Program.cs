@@ -1,9 +1,11 @@
 using System.Text;
 using backend.clients;
 using backend.interfaces;
+using backend.results.betting;
+using backend.results.codeforces;
 using backend.results.db;
-using backend.results.requests;
 using backend.services;
+using backend.services.betServices;
 using backend.utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +16,7 @@ namespace backend;
 
 public static class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         string root = Directory.GetCurrentDirectory();
         string dotenv = Path.Combine(root, ".env");
@@ -57,7 +59,9 @@ public static class Program
         builder.Services.AddSingleton<ICodeforcesClient, CodeforcesClient>();
 
         builder.Services.AddScoped<ContestService>();
+        builder.Services.AddScoped<CompeteService>();
         builder.Services.AddScoped<LoginService>();
+        builder.Services.AddScoped<UpdateService>();
 
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(opt =>
@@ -84,7 +88,7 @@ public static class Program
                             Id = "Bearer"
                         }
                     },
-                    new string[] { }
+                    Array.Empty<string>()
                 }
             });
         });
@@ -98,6 +102,32 @@ public static class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+
+        using (var scope = app.Services.CreateScope())
+        {
+            var updateService = scope.ServiceProvider.GetRequiredService<UpdateService>();
+
+            while (await timer.WaitForNextTickAsync())
+            {
+                /*
+                check for new contests
+                update the leaderboard
+                check if any contest is completed but P/L hasn't been applied
+                yes:
+                    1) get results of that contest
+                    2) update all bet objects and users in that contest
+                    3) close contest
+                no:
+                    do nothing
+                if contest is in betting stage:
+                    1) get competitors and store in database (update if already in database)
+                */
+                Console.WriteLine("Updating Contest Information...");
+                updateService.CheckContests();
+            }
+        }
 
         app.MapPost(
             "/register", async (LoginService loginService, UserLoginRequest request) =>
@@ -139,17 +169,14 @@ public static class Program
             }
         });
 
-        app.MapPost("/bet",
-            async (ContestService ContestService, HttpRequest request, JwtService jwtService, BetRequest betRequest) =>
+        app.MapPost("/bet/compete",
+            async (CompeteService competeService, JwtService jwtService, HttpRequest request, BetEntry betRequest) =>
             {
                 string token = request.Headers.Authorization.ToString().Replace("Bearer ", "");
 
                 betRequest.UserId = jwtService.GetUserId(token);
 
-                var service = new BetService(ContestService, betRequest);
-                var result = await service.PlaceBet();
-
-                return result;
+                await competeService.PlaceBet(betRequest);
             }).RequireAuthorization();
 
         app.UseHttpsRedirection();

@@ -1,4 +1,3 @@
-using backend.results.betting;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -13,6 +12,5 @@ public class UserSchema
     public string? Username { get; set; }
     public string? PasswordHash { get; set; }
 
-    public List<BetResult>? Results { get; set; }
     public double MoneyBalance { get; set; }
 }
