@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using backend.clients;
 using backend.interfaces;
@@ -124,8 +125,15 @@ public static class Program
                 if contest is in betting stage:
                     1) get competitors and store in database (update if already in database)
                 */
+                // var sw = new Stopwatch();
+                // sw.Start();
+
                 Console.WriteLine("Updating Contest Information...");
                 await updateService.CheckContests();
+                await updateService.UpdateBets();
+
+                // sw.Stop();
+                // Console.WriteLine("Elapsed={0}", sw.Elapsed);
             }
         }
 

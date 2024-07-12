@@ -24,9 +24,9 @@ namespace backend_tests.serviceTests
         {
             var contestList = new List<Contest>
             {
-                new() { Id = 1, Name = "Contest 1", Phase = "BEFORE" },
-                new() { Id = 2, Name = "Contest 2", Phase = "FINISHED" },
-                new() { Id = 3, Name = "Contest 3", Phase = "BEFORE" }
+                new() { ContestId = 1, Name = "Contest 1", Phase = "BEFORE" },
+                new() { ContestId = 2, Name = "Contest 2", Phase = "FINISHED" },
+                new() { ContestId = 3, Name = "Contest 3", Phase = "BEFORE" }
             };
 
             _codeforcesClientMock.Setup(client => client.GetCurrentContests())!

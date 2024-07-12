@@ -9,13 +9,12 @@ public class ContestStatusSchema
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
 
-    public int contestId { get; set; }
-    public ContestStatus status { get; set; }
+    public int ContestId { get; set; }
+    public ContestStatus Status { get; set; }
 }
 
 public enum ContestStatus
 {
-    Before,
-    InCompetition,
+    Incomplete,
     Complete,
 }
