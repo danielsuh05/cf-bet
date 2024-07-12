@@ -125,7 +125,7 @@ public static class Program
                     1) get competitors and store in database (update if already in database)
                 */
                 Console.WriteLine("Updating Contest Information...");
-                updateService.CheckContests();
+                await updateService.CheckContests();
             }
         }
 
