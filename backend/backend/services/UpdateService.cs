@@ -13,34 +13,16 @@ public class UpdateService(ICodeforcesClient client, MongoDBContext context)
             Contests = await client.GetCurrentContests()
         };
 
-        var dbContests = await (await context.Contests.FindAsync(Builders<ContestSchema>.Filter.Empty)).ToListAsync();
-
-        var dbContestsIds = dbContests
-            .SelectMany(c => c.Contests)
-            .Select(c => c!.Id)
-            .ToHashSet();
-
-        var newContests = currentContests.Contests
-            .Where(c => !dbContestsIds.Contains(c!.Id))
-            .ToList();
-
-        if (newContests.Count != 0)
+        var filter = Builders<ContestSchema>.Filter.Empty;
+        if (await context.Contests.CountDocumentsAsync(filter) == 0)
         {
-            var updateDefinition = Builders<ContestSchema>.Update.PushEach(c => c.Contests, newContests);
-
-            await context.Contests.UpdateManyAsync(
-                filter: Builders<ContestSchema>.Filter.Empty,
-                update: updateDefinition
-            );
-
-            Console.WriteLine($"New contest found.");
-        }
-        else
-        {
-            Console.WriteLine($"No new contests to add.");
+            await context.Contests.InsertOneAsync(currentContests);
+            return;
         }
 
-        await context.Contests.InsertOneAsync(currentContests);
+        var update = Builders<ContestSchema>.Update
+            .Set(contest => contest, currentContests);
+        await context.Contests.UpdateOneAsync(filter, update);
     }
 
     public async Task UpdateLeaderboard()
