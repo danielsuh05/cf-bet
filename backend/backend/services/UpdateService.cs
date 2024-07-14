@@ -51,29 +51,45 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDBContext co
         Console.WriteLine("not implemented");
     }
 
-    public async Task UpdateBets()
+    public async Task UpdateContests()
     {
         // get the most recently finished contest
         var contests = await codeforcesClient.GetCurrentContests();
-        var finishedContest = contests.First(contest => contest!.Phase == "FINISHED");
 
-        Console.WriteLine(finishedContest.Phase);
+        var currentContests = contests.Where(contest =>
+                contest!.Phase == "CODING" || contest.Phase == "PENDING_SYSTEM_TEST" || contest.Phase == "SYSTEM_TEST")
+            .Select(contest => contest!.Id)
+            .ToHashSet();
 
-        var filter = Builders<ContestStatusSchema>.Filter.Eq(contest => contest.ContestId, finishedContest!.Id);
-        var contestStatus = await (await context.ContestStatuses.FindAsync(filter)).ToListAsync();
+        var finishedContests = contests.Where(contest => contest!.Phase == "FINISHED")
+            .Select(contest => contest!.Id)
+            .ToHashSet();
 
-        Console.WriteLine(contestStatus[0].ContestId);
-
-        if (contestStatus[0].Status == ContestStatus.Complete)
-        {
-            return;
-        }
+        var currentContestsFilter =
+            Builders<ContestStatusSchema>.Filter.Where(contest => currentContests.Contains(contest.ContestId));
 
         var update = Builders<ContestStatusSchema>.Update
-            .Set(contest => contest.Status, ContestStatus.Complete);
-        await context.ContestStatuses.UpdateOneAsync(filter, update);
+            .Set(contest => contest.Status, ContestStatus.Closed);
+        await context.ContestStatuses.UpdateManyAsync(currentContestsFilter, update);
 
-        // finishedContest.ContestId is the id of the contest that we want ot update the bets for. 
+        // finding the contests in contest statuses which are finished on codeforces but have not yet been processed.
+        // we store these in incompleteContests and then update the contest statuses in mongodb to say that they are fully complete contests.
+        // this is why we do not want the contest status to be complete when we check for them in the filter.
+
+        var finishedContestsFilter =
+            Builders<ContestStatusSchema>.Filter.Where(contest =>
+                finishedContests.Contains(contest.ContestId)) &
+            Builders<ContestStatusSchema>.Filter.Where(contest => contest.Status != ContestStatus.Complete);
+        var incompleteContests =
+            await (await context.ContestStatuses.FindAsync(finishedContestsFilter)).ToListAsync();
+
+        // complete the contests because we are about to update them
+        update = Builders<ContestStatusSchema>.Update
+            .Set(contest => contest.Status, ContestStatus.Complete);
+        await context.ContestStatuses.UpdateManyAsync(finishedContestsFilter, update);
+
+        // incompletecontests are the contests we need to update
+        // TODO: add logic for if the top person doesn't participate in the contest
     }
 
     public async Task GetCompetitors()
@@ -90,6 +106,15 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDBContext co
                     currentPreContest!.Id);
             var update = Builders<ContestCompetitorsSchema>.Update
                 .Set(contest => contest.Competitors, competitors);
+
+            if (await context.ContestCompetitors.CountDocumentsAsync(filter) == 0)
+            {
+                await context.ContestCompetitors.InsertOneAsync(new ContestCompetitorsSchema
+                {
+                    ContestId = currentPreContest!.Id,
+                    Competitors = competitors
+                });
+            }
 
             await context.ContestCompetitors.UpdateOneAsync(filter, update);
         }

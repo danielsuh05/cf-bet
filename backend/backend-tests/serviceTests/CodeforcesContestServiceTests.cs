@@ -7,16 +7,16 @@ using Moq;
 namespace backend_tests.serviceTests
 {
     [TestFixture]
-    public class ContestServiceTests
+    public class CodeforcesContestServiceTests
     {
         private Mock<ICodeforcesClient> _codeforcesClientMock;
-        private ContestService _contestService;
+        private CodeforcesContestService _codeforcesContestService;
 
         [SetUp]
         public void Setup()
         {
             _codeforcesClientMock = new Mock<ICodeforcesClient>();
-            _contestService = new ContestService(_codeforcesClientMock.Object);
+            _codeforcesContestService = new CodeforcesContestService(_codeforcesClientMock.Object);
         }
 
         [Test]
@@ -32,7 +32,7 @@ namespace backend_tests.serviceTests
             _codeforcesClientMock.Setup(client => client.GetCurrentContests())!
                 .ReturnsAsync(contestList);
 
-            var result = await _contestService.GetActiveContests();
+            var result = await _codeforcesContestService.GetActiveContests();
 
             result.Should().NotBeNull();
             result.Should().HaveCount(2);
@@ -46,7 +46,7 @@ namespace backend_tests.serviceTests
             _codeforcesClientMock.Setup(client => client.GetCurrentContests())!
                 .ReturnsAsync((List<Contest>?)null);
 
-            var result = await _contestService.GetActiveContests();
+            var result = await _codeforcesContestService.GetActiveContests();
 
             result.Should().BeNull();
         }
@@ -59,7 +59,7 @@ namespace backend_tests.serviceTests
             _codeforcesClientMock.Setup(client => client.GetCurrentContests())!
                 .ReturnsAsync(contestList);
 
-            var result = await _contestService.GetActiveContests();
+            var result = await _codeforcesContestService.GetActiveContests();
 
             result.Should().BeNull();
         }
@@ -70,7 +70,7 @@ namespace backend_tests.serviceTests
             _codeforcesClientMock.Setup(client => client.GetCurrentContests())
                 .ThrowsAsync(new Exception("Unexpected error"));
 
-            var result = await _contestService.GetActiveContests();
+            var result = await _codeforcesContestService.GetActiveContests();
 
             result.Should().BeNull();
         }

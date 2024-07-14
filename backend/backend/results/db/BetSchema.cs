@@ -1,9 +1,9 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace backend.results.betting;
+namespace backend.results.db;
 
-public class BetEntry
+public class BetSchema
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

@@ -16,5 +16,6 @@ public class ContestStatusSchema
 public enum ContestStatus
 {
     Incomplete,
+    Closed,
     Complete,
 }

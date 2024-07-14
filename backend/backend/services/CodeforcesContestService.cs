@@ -5,7 +5,7 @@ using backend.utils;
 
 namespace backend.services;
 
-public class ContestService(ICodeforcesClient codeforcesClient)
+public class CodeforcesContestService(ICodeforcesClient codeforcesClient)
 {
     public async Task<List<Contest>?> GetActiveContests()
     {
