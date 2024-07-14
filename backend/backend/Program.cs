@@ -63,8 +63,6 @@ public static class Program
         builder.Services.AddScoped<LoginService>();
         builder.Services.AddScoped<UpdateService>();
 
-        builder.Services.AddHostedService<TimedHostedService>();
-
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(opt =>
         {
@@ -155,7 +153,44 @@ public static class Program
                 await competeService.PlaceBet(betRequest);
             }).RequireAuthorization();
 
-        app.UseHttpsRedirection();
-        app.Run();
+        // app.UseHttpsRedirection();
+        var cur1 = app.RunAsync();
+        var cur2 = Task.Run(async () =>
+        {
+            var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+
+            using var scope = app.Services.CreateScope();
+            var updateService = scope.ServiceProvider.GetRequiredService<UpdateService>();
+
+            while (await timer.WaitForNextTickAsync())
+            {
+                /*
+                    check for new contests
+                    update the leaderboard
+                    check if any contest is completed but P/L hasn't been applied
+                    yes:
+                        1) get results of that contest
+                        2) update all bet objects and users in that contest
+                        3) close contest
+                    no:
+                        do nothing
+                    if contest is in betting stage:
+                        1) get competitors and store in database (update if already in database)
+                    */
+                // var sw = new Stopwatch();
+                // sw.Start();
+
+                Console.WriteLine("Updating Contest Information...");
+                await updateService.CheckContests();
+                await updateService.UpdateLeaderboard();
+                await updateService.UpdateContests();
+                await updateService.GetCompetitors();
+
+                // sw.Stop();
+                // Console.WriteLine("Elapsed={0}", sw.Elapsed);
+            }
+        });
+
+        await Task.WhenAll(cur1, cur2);
     }
 }
