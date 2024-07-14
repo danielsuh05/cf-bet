@@ -1,12 +1,15 @@
 using backend.interfaces;
 using backend.results.codeforces;
+using backend.results.db;
+using backend.services;
 using backend.utils;
 using HtmlAgilityPack;
+using MongoDB.Driver;
 using Newtonsoft.Json;
 
 namespace backend.clients;
 
-public class CodeforcesClient(HttpClient client) : ICodeforcesClient
+public class CodeforcesClient(HttpClient client, MongoDBContext context) : ICodeforcesClient
 {
     public async Task<UserResult?> GetUserInfo(string username)
     {
@@ -109,6 +112,27 @@ public class CodeforcesClient(HttpClient client) : ICodeforcesClient
         catch (HttpRequestException e)
         {
             throw new RestException(e.StatusCode, e.Message);
+        }
+    }
+
+    public async Task<List<Competitor>?> GetTopNCompetitorsFromDb(int id)
+    {
+        try
+        {
+            var filter = Builders<ContestCompetitorsSchema>.Filter.Eq(contest => contest.ContestId, id);
+            var competitors = await context.ContestCompetitors.FindAsync(filter);
+            if (!competitors.Current.Any())
+            {
+                throw new Exception("Could not find contest.");
+            }
+
+            Console.WriteLine(competitors.Current.First().ContestId);
+
+            return competitors.Current.First().Competitors;
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
         }
     }
 }

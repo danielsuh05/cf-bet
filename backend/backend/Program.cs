@@ -52,11 +52,12 @@ public static class Program
 
         builder.Services.AddAuthorization();
 
-        builder.Services.AddSingleton(new MongoDBContext(mongoConnectionString, mongoDatabaseName));
-        builder.Services.AddSingleton(new JwtService(jwtSecret));
+        builder.Services.AddSingleton(new MongoDBContext(mongoConnectionString!, mongoDatabaseName!));
+        builder.Services.AddSingleton(new JwtService(jwtSecret!));
+        // builder.Services.AddHttpClient();
+        builder.Services.AddHttpClient<ICodeforcesClient, CodeforcesClient>();
 
-        builder.Services.AddHttpClient();
-        builder.Services.AddSingleton<ICodeforcesClient, CodeforcesClient>();
+        // builder.Services.AddSingleton<ICodeforcesClient, CodeforcesClient>();
 
         builder.Services.AddScoped<CodeforcesContestService>();
         builder.Services.AddScoped<CompeteService>();
@@ -182,7 +183,6 @@ public static class Program
 
                 Console.WriteLine("Updating Contest Information...");
                 await updateService.CheckContests();
-                await updateService.UpdateLeaderboard();
                 await updateService.UpdateContests();
                 await updateService.GetCompetitors();
 

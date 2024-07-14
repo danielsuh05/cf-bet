@@ -16,14 +16,22 @@ public class CompeteService(ICodeforcesClient codeforcesClient, MongoDBContext c
         string handle1 = schema.BetHandle1!;
         string handle2 = schema.BetHandle2!;
 
-        var competitors = await codeforcesClient.GetTopNCompetitors(schema.ContestId);
+        var competitors = await codeforcesClient.GetTopNCompetitorsFromDb(schema.ContestId);
 
-        var competitor1 = competitors!.FirstOrDefault(c => c.Handle == handle1);
-        var competitor2 = competitors!.FirstOrDefault(c => c.Handle == handle2);
-
-        double probability = GetProbability(competitor1!.Ranking, competitor2!.Ranking);
-        schema.Probability = probability;
+        foreach (var c in competitors)
+        {
+            Console.WriteLine(c.Handle);
+        }
 
         return schema;
+
+        //
+        // var competitor1 = competitors!.FirstOrDefault(c => c.Handle == handle1);
+        // var competitor2 = competitors!.FirstOrDefault(c => c.Handle == handle2);
+        //
+        // double probability = GetProbability(competitor1!.Ranking, competitor2!.Ranking);
+        // schema.Probability = probability;
+        //
+        // return schema;
     }
 }

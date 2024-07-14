@@ -46,11 +46,6 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDBContext co
         await context.Contests.UpdateOneAsync(filter, update);
     }
 
-    public async Task UpdateLeaderboard()
-    {
-        Console.WriteLine("not implemented");
-    }
-
     public async Task UpdateContests()
     {
         // get the most recently finished contest
@@ -111,7 +106,7 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDBContext co
             {
                 await context.ContestCompetitors.InsertOneAsync(new ContestCompetitorsSchema
                 {
-                    ContestId = currentPreContest!.Id,
+                    ContestId = currentPreContest.Id,
                     Competitors = competitors
                 });
             }
