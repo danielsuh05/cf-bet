@@ -1,15 +1,12 @@
 using backend.interfaces;
 using backend.results.codeforces;
-using backend.results.db;
-using backend.services;
 using backend.utils;
 using HtmlAgilityPack;
-using MongoDB.Driver;
 using Newtonsoft.Json;
 
 namespace backend.clients;
 
-public class CodeforcesClient(HttpClient client, MongoDbContext context) : ICodeforcesClient
+public class CodeforcesClient(HttpClient client) : ICodeforcesClient
 {
     public async Task<UserResult?> GetUserInfo(string username)
     {

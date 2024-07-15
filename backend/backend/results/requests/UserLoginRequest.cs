@@ -1,4 +1,4 @@
-namespace backend.results.db;
+namespace backend.results.requests;
 
 public class UserLoginRequest
 {

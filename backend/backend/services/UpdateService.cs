@@ -1,9 +1,7 @@
 using backend.interfaces;
-using backend.results.codeforces;
 using backend.results.db;
 using backend.utils;
 using MongoDB.Driver;
-using MongoDB.Driver.Linq;
 
 namespace backend.services;
 
@@ -16,7 +14,7 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
             Contests = await codeforcesClient.GetCurrentContests()
         };
 
-        var contestIds = contestsDocument.Contests.Where(c => c != null).Select(c => c.Id).ToList();
+        var contestIds = contestsDocument.Contests.Where(c => c != null).Select(c => c!.Id).ToList();
 
         var statusFilter = Builders<ContestStatusSchema>.Filter.In(cs => cs.ContestId, contestIds);
         var existingContestStatuses = await context.ContestStatuses.Find(statusFilter).ToListAsync();
@@ -84,7 +82,7 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
             .Set(contest => contest.Status, ContestStatus.Complete);
         await context.ContestStatuses.UpdateManyAsync(finishedContestsFilter, update);
 
-        // incompletecontests are the contests we need to update
+        // incomplete contests are the contests we need to update
         // TODO: add logic for if the top person doesn't participate in the contest
     }
 
@@ -99,7 +97,7 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
 
             var filter =
                 Builders<ContestCompetitorsSchema>.Filter.Eq(contest => contest.ContestId,
-                    currentPreContest!.Id);
+                    currentPreContest.Id);
             var update = Builders<ContestCompetitorsSchema>.Update
                 .Set(contest => contest.Competitors, competitors);
 

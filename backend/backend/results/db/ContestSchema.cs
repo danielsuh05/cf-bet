@@ -10,5 +10,5 @@ public class ContestSchema
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
 
-    public List<Contest?> Contests { get; set; }
+    public List<Contest?>? Contests { get; set; }
 }

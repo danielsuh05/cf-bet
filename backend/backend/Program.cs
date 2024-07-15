@@ -1,14 +1,12 @@
-using System.Diagnostics;
 using System.Text;
 using backend.clients;
 using backend.interfaces;
-using backend.results.codeforces;
 using backend.results.db;
+using backend.results.requests;
 using backend.services;
 using backend.services.betServices;
 using backend.utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 

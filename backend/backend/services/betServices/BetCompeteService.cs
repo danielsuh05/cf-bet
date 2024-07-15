@@ -33,7 +33,7 @@ public class BetCompeteService(MongoDbService service)
                 throw new RestException(HttpStatusCode.NotFound, $"Could not find user {handle2}");
             }
 
-            double probability = GetProbability(competitor1!.Ranking, competitor2!.Ranking);
+            double probability = GetProbability(competitor1.Ranking, competitor2.Ranking);
             schema.Probability = probability;
             schema.Status = BetStatus.Pending;
 
