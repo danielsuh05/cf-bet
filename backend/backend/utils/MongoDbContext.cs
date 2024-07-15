@@ -1,13 +1,13 @@
 using backend.results.db;
 using MongoDB.Driver;
 
-namespace backend.services;
+namespace backend.utils;
 
-public class MongoDBContext
+public class MongoDbContext
 {
     private readonly IMongoDatabase _database;
 
-    public MongoDBContext(string? connectionUrl, string? databaseName)
+    public MongoDbContext(string? connectionUrl, string? databaseName)
     {
         var client = new MongoClient(connectionUrl);
         _database = client.GetDatabase(databaseName);

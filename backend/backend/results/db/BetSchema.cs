@@ -7,14 +7,14 @@ public class BetSchema
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
+    public string? Id { get; set; } // set by mongodb
 
-    public string? UserId { get; set; }
+    public string? UserId { get; set; } // set by authorization
     public int ContestId { get; set; }
 
-    public BetType BetType { get; set; }
+    public BetType BetType { get; set; } // set by frontend
+    public decimal InitialBet { get; set; } // set by frontend
     public BetStatus Status { get; set; }
-    public decimal InitialBet { get; set; }
     public decimal? ProfitLoss { get; set; }
     public double? Probability { get; set; }
 

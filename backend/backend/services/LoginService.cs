@@ -6,7 +6,7 @@ using MongoDB.Driver;
 
 namespace backend.services;
 
-public class LoginService(ICodeforcesClient codeforcesClient, MongoDBContext context, JwtService jwtService)
+public class LoginService(ICodeforcesClient codeforcesClient, MongoDbContext context, JwtService jwtService)
 {
     private async Task<bool> UserExists(string username)
     {

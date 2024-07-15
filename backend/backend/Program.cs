@@ -28,71 +28,82 @@ public static class Program
         string? mongoDatabaseName = Environment.GetEnvironmentVariable("MONGO_DATABASE_NAME");
         string? jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
 
-        builder.Services.AddAuthentication(cfg =>
         {
-            cfg.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            cfg.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            cfg.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-        }).AddJwtBearer(x =>
-        {
-            x.RequireHttpsMetadata = false;
-            x.SaveToken = false;
-            x.TokenValidationParameters = new TokenValidationParameters
+            builder.Services.AddAuthentication(cfg =>
             {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8
-                        .GetBytes(jwtSecret!)
-                ),
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ClockSkew = TimeSpan.Zero
-            };
-        });
-
-        builder.Services.AddAuthorization();
-
-        builder.Services.AddSingleton(new MongoDBContext(mongoConnectionString!, mongoDatabaseName!));
-        builder.Services.AddSingleton(new JwtService(jwtSecret!));
-        // builder.Services.AddHttpClient();
-        builder.Services.AddHttpClient<ICodeforcesClient, CodeforcesClient>();
-
-        // builder.Services.AddSingleton<ICodeforcesClient, CodeforcesClient>();
-
-        builder.Services.AddScoped<CodeforcesContestService>();
-        builder.Services.AddScoped<CompeteService>();
-        builder.Services.AddScoped<LoginService>();
-        builder.Services.AddScoped<UpdateService>();
-
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen(opt =>
-        {
-            opt.SwaggerDoc("v1", new OpenApiInfo { Title = "MyAPI", Version = "v1" });
-            opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                cfg.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                cfg.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                cfg.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(x =>
             {
-                In = ParameterLocation.Header,
-                Description = "Please enter token",
-                Name = "Authorization",
-                Type = SecuritySchemeType.Http,
-                BearerFormat = "JWT",
-                Scheme = "bearer"
-            });
-
-            opt.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
+                x.RequireHttpsMetadata = false;
+                x.SaveToken = false;
+                x.TokenValidationParameters = new TokenValidationParameters
                 {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
-                }
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8
+                            .GetBytes(jwtSecret!)
+                    ),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero
+                };
             });
-        });
+
+            builder.Services.AddAuthorization();
+
+            // utils
+            builder.Services.AddSingleton(new MongoDbContext(mongoConnectionString!, mongoDatabaseName!));
+            builder.Services.AddSingleton(new JwtService(jwtSecret!));
+            builder.Services.AddHttpClient();
+
+            // clients
+            builder.Services.AddSingleton<ICodeforcesClient, CodeforcesClient>();
+
+            // services
+            builder.Services.AddSingleton<MongoDbService>();
+            builder.Services.AddSingleton<CodeforcesContestService>();
+
+            // bet services
+            builder.Services.AddSingleton<BetCompeteService>();
+            builder.Services.AddSingleton<BetWinnerService>();
+            builder.Services.AddSingleton<BetTopNService>();
+
+            builder.Services.AddSingleton<LoginService>();
+            builder.Services.AddSingleton<UpdateService>();
+
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(opt =>
+            {
+                opt.SwaggerDoc("v1", new OpenApiInfo { Title = "MyAPI", Version = "v1" });
+                opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Please enter token",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    BearerFormat = "JWT",
+                    Scheme = "bearer"
+                });
+
+                opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
+        }
+
         var app = builder.Build();
 
         if (app.Environment.IsDevelopment())
@@ -144,14 +155,47 @@ public static class Program
             }
         });
 
+
         app.MapPost("/bet/compete",
-            async (CompeteService competeService, JwtService jwtService, HttpRequest request, BetSchema betRequest) =>
+            async (BetCompeteService competeService, BetSchema betRequest) =>
             {
-                string token = request.Headers.Authorization.ToString().Replace("Bearer ", "");
+                try
+                {
+                    var bet = await competeService.PlaceBet(betRequest);
+                    return Results.Accepted(bet.Probability.ToString());
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(ex.Message);
+                }
+            }).RequireAuthorization();
 
-                betRequest.UserId = jwtService.GetUserId(token);
+        app.MapPost("/bet/winner",
+            async (BetWinnerService winnerService, BetSchema betRequest) =>
+            {
+                try
+                {
+                    var bet = await winnerService.PlaceBet(betRequest);
+                    return Results.Accepted(bet.Probability.ToString());
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(ex.Message);
+                }
+            }).RequireAuthorization();
 
-                await competeService.PlaceBet(betRequest);
+        app.MapPost("/bet/topn",
+            async (BetTopNService topNService, BetSchema betRequest) =>
+            {
+                try
+                {
+                    var bet = await topNService.PlaceBet(betRequest);
+                    return Results.Accepted(bet.Probability.ToString());
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(ex.Message);
+                }
             }).RequireAuthorization();
 
         // app.UseHttpsRedirection();

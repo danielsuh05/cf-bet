@@ -1,12 +1,13 @@
 using backend.interfaces;
 using backend.results.codeforces;
 using backend.results.db;
+using backend.utils;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
 namespace backend.services;
 
-public class UpdateService(ICodeforcesClient codeforcesClient, MongoDBContext context)
+public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext context)
 {
     public async Task CheckContests()
     {
