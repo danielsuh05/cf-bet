@@ -138,4 +138,33 @@ public class CodeforcesClient(HttpClient client) : ICodeforcesClient
             throw new RestException(e.StatusCode, e.Message);
         }
     }
+
+    public async Task<int> GetRankingHandle(string handle)
+    {
+        try
+        {
+            var url =
+                $"https://codeforces.com/api/contest.standings?contestId=1988&asManager=false&from=1&count=5&showUnofficial=true&handles={handle}";
+
+            var response = await client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            string responseBody = await response.Content.ReadAsStringAsync();
+
+            var apiResponse = JsonConvert.DeserializeObject<ContestInfo>(responseBody);
+            if (apiResponse == null)
+            {
+                throw new RestException(HttpStatusCode.NotFound, "Did not find the contest from Codeforces API");
+            }
+
+            if (apiResponse.Result!.Rows!.Length == 0) return -1;
+
+            int result = apiResponse.Result!.Rows!.First().Rank;
+            return result;
+        }
+        catch (HttpRequestException e)
+        {
+            throw new RestException(e.StatusCode, e.Message);
+        }
+    }
 }

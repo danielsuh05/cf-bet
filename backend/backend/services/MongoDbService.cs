@@ -103,4 +103,66 @@ public class MongoDbService(MongoDbContext context)
             throw new Exception(e.Message);
         }
     }
+
+    public async Task<List<Contest>> GetCurrentContests()
+    {
+        try
+        {
+            var filter = Builders<ContestSchema>.Filter.Eq(contest => contest.Phase, "BEFORE");
+            var contests = await context.Contests.Find(filter).ToListAsync();
+            var retContests = contests.Select(contest => new Contest
+            {
+                Name = contest.Name,
+                Type = contest.Type,
+                Phase = contest.Phase,
+                Frozen = contest.Frozen,
+                DurationSeconds = contest.DurationSeconds,
+                StartTimeSeconds = contest.StartTimeSeconds,
+                RelativeTimeSeconds = contest.RelativeTimeSeconds
+            }).ToList();
+
+            return retContests;
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
+    }
+
+    public async Task<List<BetSchema>> GetContestBets(int id)
+    {
+        try
+        {
+            var filter = Builders<BetSchema>.Filter.Eq(bet => bet.ContestId, id);
+
+            var bets = await context.Bets.Find(filter).ToListAsync();
+
+            return bets;
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
+    }
+
+    public async Task<List<UserSchema>> GetRankings()
+    {
+        try
+        {
+            var filter = Builders<UserSchema>.Filter.Empty;
+            var sort = Builders<UserSchema>.Sort.Descending(u => u.MoneyBalance);
+
+            var rankings = await context.Users
+                .Find(filter)
+                .Sort(sort)
+                .Limit(250)
+                .ToListAsync();
+
+            return rankings;
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
+    }
 }

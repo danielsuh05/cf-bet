@@ -11,4 +11,6 @@ public interface ICodeforcesClient
     public Task<List<Competitor>?> GetTopNCompetitors(int id);
 
     public Task<List<Member>?> GetRankings(int id);
+
+    public Task<int> GetRankingHandle(string handle);
 }

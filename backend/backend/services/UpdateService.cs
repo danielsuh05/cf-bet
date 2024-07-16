@@ -9,41 +9,61 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
 {
     public async Task CheckContests()
     {
-        var contestsDocument = new ContestSchema
-        {
-            Contests = await codeforcesClient.GetCurrentContests()
-        };
+        var contests = await codeforcesClient.GetCurrentContests();
+        List<ContestStatusSchema> schemas = new List<ContestStatusSchema>();
+        List<ContestSchema> contestSchemas = new List<ContestSchema>();
 
-        var contestIds = contestsDocument.Contests.Where(c => c != null).Select(c => c!.Id).ToList();
-
-        var statusFilter = Builders<ContestStatusSchema>.Filter.In(cs => cs.ContestId, contestIds);
-        var existingContestStatuses = await context.ContestStatuses.Find(statusFilter).ToListAsync();
+        var contestIds = contests.Select(c => c!.Id).ToList();
+        var existingContestStatuses = await context.ContestStatuses
+            .Find(Builders<ContestStatusSchema>.Filter.In(cs => cs.ContestId, contestIds))
+            .ToListAsync();
         var existingContestIds = existingContestStatuses.Select(cs => cs.ContestId).ToHashSet();
 
-        var newContestStatusDocuments = contestsDocument.Contests
-            .Where(contest => contest != null && !existingContestIds.Contains(contest.Id))
-            .Select(contest => new ContestStatusSchema
+        var existingContests = await context.Contests
+            .Find(Builders<ContestSchema>.Filter.In(c => c.ContestId, contestIds))
+            .ToListAsync();
+        var existingContestIdsForContests = existingContests.Select(c => c.ContestId).ToHashSet();
+
+        var tasks = contests.Select(async contest =>
+        {
+            if (!existingContestIds.Contains(contest!.Id))
             {
-                ContestId = contest!.Id,
-                Status = ContestStatus.Incomplete
-            }).ToList();
+                var tempSchema = new ContestStatusSchema
+                {
+                    ContestId = contest.Id,
+                    Status = ContestStatus.Incomplete,
+                };
+                schemas.Add(tempSchema);
+            }
 
-        // code above + this if statement adds new contests to ContestStatuses
-        if (newContestStatusDocuments.Count > 0)
+            if (!existingContestIdsForContests.Contains(contest!.Id))
+            {
+                var tempContestSchema = new ContestSchema
+                {
+                    ContestId = contest.Id,
+                    Name = contest.Name,
+                    Type = contest.Type,
+                    Phase = contest.Phase,
+                    Frozen = contest.Frozen,
+                    DurationSeconds = contest.DurationSeconds,
+                    StartTimeSeconds = contest.StartTimeSeconds,
+                    RelativeTimeSeconds = contest.RelativeTimeSeconds
+                };
+                contestSchemas.Add(tempContestSchema);
+            }
+        }).ToList();
+
+        await Task.WhenAll(tasks);
+
+        if (schemas.Count > 0)
         {
-            await context.ContestStatuses.InsertManyAsync(newContestStatusDocuments);
+            await context.ContestStatuses.InsertManyAsync(schemas);
         }
 
-        var filter = Builders<ContestSchema>.Filter.Empty;
-        if (await context.Contests.CountDocumentsAsync(filter) == 0)
+        if (contestSchemas.Count > 0)
         {
-            await context.Contests.InsertOneAsync(contestsDocument);
-            return;
+            await context.Contests.InsertManyAsync(contestSchemas);
         }
-
-        var update = Builders<ContestSchema>.Update
-            .Set(contest => contest, contestsDocument);
-        await context.Contests.UpdateOneAsync(filter, update);
     }
 
     public async Task UpdateContests()
@@ -51,8 +71,7 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
         // get the most recently finished contest
         var contests = await codeforcesClient.GetCurrentContests();
 
-
-        // TODO: REMOVE TESTING
+        // // For testing purposes
         {
             var testFilter = Builders<ContestStatusSchema>.Filter.Where(contest => contest.ContestId == 1988);
             var update1 = Builders<ContestStatusSchema>.Update.Set(contest => contest.Status, ContestStatus.Closed);
@@ -93,9 +112,11 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
         await context.ContestStatuses.UpdateManyAsync(finishedContestsFilter, update);
 
         // incomplete contests are the contests we need to update
-        // TODO: add logic for if the top person doesn't participate in the contest
         foreach (var contest in incompleteContests)
         {
+            // just don't process contests before cf-bet existed
+            if (contest.ContestId < 1980) break;
+
             int contestId = contest.ContestId;
             Console.WriteLine(contestId);
             var rankings = await codeforcesClient.GetRankings(contestId);
@@ -114,8 +135,8 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
 
             foreach (var currentBet in bets)
             {
-                bool hit = false;
-                bool invalid = false;
+                var hit = false;
+                var invalid = false;
 
                 int handleRanking;
 
@@ -125,15 +146,23 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
                         int ranking1 = rankings.FindIndex(b => b.Handle == currentBet.BetHandle1);
                         int ranking2 = rankings.FindIndex(b => b.Handle == currentBet.BetHandle2);
 
-                        Console.WriteLine(ranking1);
-                        Console.WriteLine(ranking2);
-
-                        if (ranking1 == -1 && ranking2 == -1)
+                        if (ranking1 == -1)
                         {
-                            invalid = true;
+                            ranking1 = await codeforcesClient.GetRankingHandle(currentBet.BetHandle1!);
                         }
 
-                        if (ranking2 == -1 || ranking1 < ranking2)
+                        if (ranking2 == -1)
+                        {
+                            ranking2 = await codeforcesClient.GetRankingHandle(currentBet.BetHandle2!);
+                        }
+
+                        if (ranking1 == -1 || ranking2 == -1)
+                        {
+                            invalid = true;
+                            break;
+                        }
+
+                        if (ranking1 < ranking2)
                         {
                             hit = true;
                         }
@@ -164,9 +193,15 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
 
                 var betFilter = Builders<BetSchema>.Filter.Eq(b => b.Id, currentBet.Id);
 
-                // if they both placed out of t250, don't do anything
                 if (invalid)
                 {
+                    var updateInvalid = Builders<BetSchema>.Update.Set(b => b.Status, BetStatus.Invalid);
+                    await context.Bets.UpdateOneAsync(betFilter, updateInvalid);
+
+                    decimal balance = await DbService.GetBalance(currentBet.UserId!);
+                    
+                    // refund user
+                    await DbService.SetBalance(currentBet.UserId!, balance + currentBet.InitialBet);
                     continue;
                 }
 

@@ -43,4 +43,5 @@ public enum BetStatus
     Hit,
     Miss,
     Pending,
+    Invalid,
 }

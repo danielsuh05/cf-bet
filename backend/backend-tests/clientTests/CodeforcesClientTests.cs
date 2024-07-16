@@ -71,7 +71,5 @@ namespace backend_tests.clientTests
 
             await act.Should().ThrowAsync<RestException>();
         }
-
-        // TODO: Add contest tests
     }
 }

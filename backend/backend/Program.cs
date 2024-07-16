@@ -140,7 +140,7 @@ public static class Program
             }
         });
 
-        app.MapGet("/contests/{id:int}", async (MongoDbService service, int id) =>
+        app.MapGet("/contestcompetitors/{id:int}", async (MongoDbService service, int id) =>
         {
             try
             {
@@ -183,6 +183,48 @@ public static class Program
                     return Results.Problem(ex.Message);
                 }
             });
+
+        app.MapGet("/contests", async (MongoDbService service) =>
+        {
+            try
+            {
+                var result = await service.GetCurrentContests();
+
+                return Results.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(ex.Message);
+            }
+        });
+
+        app.MapGet("/contestbets/{id:int}", async (MongoDbService service, int id) =>
+        {
+            try
+            {
+                var result = await service.GetContestBets(id);
+
+                return Results.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(ex.Message);
+            }
+        });
+
+        app.MapGet("/rankings", async (MongoDbService service) =>
+        {
+            try
+            {
+                var result = await service.GetRankings();
+
+                return Results.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(ex.Message);
+            }
+        });
 
         app.MapPost("/bet/compete",
             async (HttpRequest request, JwtService jwtService, BetCompeteService competeService,
@@ -264,33 +306,15 @@ public static class Program
 
             while (await timer.WaitForNextTickAsync())
             {
-                /*
-                    check for new contests
-                    update the leaderboard
-                    check if any contest is completed but P/L hasn't been applied
-                    yes:
-                        1) get results of that contest
-                        2) update all bet objects and users in that contest
-                        3) close contest
-                    no:
-                        do nothing
-                    if contest is in betting stage:
-                        1) get competitors and store in database (update if already in database)
-                    */
-                // var sw = new Stopwatch();
-                // sw.Start();
-
                 Console.WriteLine("Checking contests...");
                 await updateService.CheckContests();
                 Console.WriteLine("Updating contests...");
                 await updateService.UpdateContests();
                 Console.WriteLine("Getting competitors...");
                 await updateService.GetCompetitors();
+                Console.WriteLine("Done");
 
                 break;
-
-                // sw.Stop();
-                // Console.WriteLine("Elapsed={0}", sw.Elapsed);
             }
         });
 

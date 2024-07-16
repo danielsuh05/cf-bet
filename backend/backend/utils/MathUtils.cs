@@ -2,10 +2,10 @@ namespace backend.utils;
 
 public class MathUtils
 {
-    // TODO: how to actually calculate this?
-    public static readonly double EloStd = 283;
+    // assuming normal distribution
+    public const double EloStd = 283;
 
-    public static readonly int CountMonteCarloSimulations = 100000;
+    public const int CountMonteCarloSimulations = 100000;
 
     private static readonly Random Rand = new Random();
 
