@@ -11,7 +11,7 @@ public class BetCompeteService(MongoDbService service)
         return 1.0 / (1 + double.Pow(10.0, (elo2 - elo1) / 400.0));
     }
 
-    public async Task<BetSchema> PlaceBet(BetSchema schema)
+    public async Task PlaceBet(BetSchema schema)
     {
         try
         {
@@ -34,10 +34,11 @@ public class BetCompeteService(MongoDbService service)
             }
 
             double probability = GetProbability(competitor1.Ranking, competitor2.Ranking);
+
             schema.Probability = probability;
             schema.Status = BetStatus.Pending;
 
-            return schema;
+            await service.PutBet(schema);
         }
         catch (RestException e)
         {

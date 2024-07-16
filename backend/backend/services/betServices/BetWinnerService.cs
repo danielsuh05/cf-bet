@@ -24,7 +24,7 @@ public class BetWinnerService(MongoDbService service)
         return (double)numWins / MathUtils.CountMonteCarloSimulations;
     }
 
-    public async Task<BetSchema> PlaceBet(BetSchema schema)
+    public async Task PlaceBet(BetSchema schema)
     {
         try
         {
@@ -43,7 +43,7 @@ public class BetWinnerService(MongoDbService service)
             schema.Probability = probability;
             schema.Status = BetStatus.Pending;
 
-            return schema;
+            await service.PutBet(schema);
         }
         catch (RestException e)
         {

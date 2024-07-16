@@ -12,7 +12,8 @@ public class JwtService(string? secret)
     {
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, user.Id!)
+            new(ClaimTypes.NameIdentifier, user.Id!),
+            new(ClaimTypes.Name, user.Username!)
         };
 
         var jwtToken = new JwtSecurityToken(
@@ -45,5 +46,25 @@ public class JwtService(string? secret)
         }
 
         return userIdClaim.Value;
+    }
+
+    public string GetUserName(string token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var securityToken = (JwtSecurityToken)tokenHandler.ReadToken(token);
+
+        if (securityToken == null)
+        {
+            throw new ArgumentException("Invalid token");
+        }
+
+        var userNameClaim = securityToken.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Name);
+
+        if (userNameClaim == null)
+        {
+            throw new ArgumentException("Username claim not found");
+        }
+
+        return userNameClaim.Value;
     }
 }

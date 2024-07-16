@@ -12,7 +12,7 @@ public class BetTopNService(MongoDbService service)
         Parallel.For(0, MathUtils.CountMonteCarloSimulations, _ =>
         {
             double curWinnerElo = MathUtils.BoxMullerTransform(winnerElo, MathUtils.EloStd);
-            int numBetter = 0;
+            var numBetter = 0;
             if (elos.Select(elo => MathUtils.BoxMullerTransform(elo, MathUtils.EloStd))
                 .Any(compElo => compElo > curWinnerElo))
             {
@@ -28,7 +28,7 @@ public class BetTopNService(MongoDbService service)
         return (double)numSuccess / MathUtils.CountMonteCarloSimulations;
     }
 
-    public async Task<BetSchema> PlaceBet(BetSchema schema)
+    public async Task PlaceBet(BetSchema schema)
     {
         try
         {
@@ -45,11 +45,11 @@ public class BetTopNService(MongoDbService service)
             }
 
             double probability = GetProbability(competitor.Ranking, topN, competitors!.Select(c => c.Ranking).ToList());
-            Console.WriteLine(probability);
+
             schema.Probability = probability;
             schema.Status = BetStatus.Pending;
 
-            return schema;
+            await service.PutBet(schema);
         }
         catch (RestException e)
         {

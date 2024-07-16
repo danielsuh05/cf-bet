@@ -25,4 +25,42 @@ public class MongoDbService(MongoDbContext context)
             throw new Exception(e.Message);
         }
     }
+
+    public async Task PutBet(BetSchema bet)
+    {
+        try
+        {
+            var filter = Builders<BetSchema>.Filter.Eq(contest => contest.ContestId, bet.ContestId) &
+                         Builders<BetSchema>.Filter.Eq(contest => contest.UserId, bet.UserId);
+            if (await context.Bets.Find(filter).AnyAsync())
+            {
+                throw new Exception("Bet already placed for this contest.");
+            }
+
+            await context.Bets.InsertOneAsync(bet);
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
+    }
+
+    public async Task<List<BetSchema>> GetUserBets(string userId)
+    {
+        try
+        {
+            var filter = Builders<BetSchema>.Filter.Eq(user => user.UserId, userId);
+            var bets = await context.Bets.Find(filter).ToListAsync();
+            if (bets == null || bets.Count == 0)
+            {
+                throw new Exception($"Could not find any bets associated with the user ${userId}");
+            }
+
+            return bets;
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
+    }
 }

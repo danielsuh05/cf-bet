@@ -140,11 +140,11 @@ public static class Program
             }
         });
 
-        app.MapGet("/contests/{id:int}", async (CodeforcesContestService contestService, int id) =>
+        app.MapGet("/contests/{id:int}", async (MongoDbService service, int id) =>
         {
             try
             {
-                var competitors = await contestService.GetTopCompetitors(id);
+                var competitors = await service.GetTopNCompetitorsFromDb(id);
                 return Results.Ok(new { Competitors = competitors });
             }
             catch (RestException ex)
@@ -153,14 +153,42 @@ public static class Program
             }
         });
 
-
-        app.MapPost("/bet/compete",
-            async (BetCompeteService competeService, BetSchema betRequest) =>
+        app.MapGet("/userbets/{userid:int}",
+            async (MongoDbService service, JwtService jwtService, HttpRequest request) =>
             {
                 try
                 {
-                    var bet = await competeService.PlaceBet(betRequest);
-                    return Results.Accepted(bet.Probability.ToString());
+                    string token = request.Headers.Authorization.ToString().Replace("Bearer ", "");
+
+                    string userId = jwtService.GetUserId(token);
+                    var result = service.GetUserBets(userId);
+
+                    return Results.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(ex.Message);
+                }
+            });
+
+
+        app.MapPost("/bet/compete",
+            async (HttpRequest request, JwtService jwtService, BetCompeteService competeService,
+                BetSchema betRequest) =>
+            {
+                try
+                {
+                    string token = request.Headers.Authorization.ToString().Replace("Bearer ", "");
+
+                    string userId = jwtService.GetUserId(token);
+                    string userName = jwtService.GetUserName(token);
+                    betRequest.Id = null;
+                    betRequest.UserId = userId;
+                    betRequest.Username = userName;
+                    betRequest.BetType = BetType.Compete;
+
+                    await competeService.PlaceBet(betRequest);
+                    return Results.Accepted();
                 }
                 catch (Exception ex)
                 {
@@ -169,12 +197,21 @@ public static class Program
             }).RequireAuthorization();
 
         app.MapPost("/bet/winner",
-            async (BetWinnerService winnerService, BetSchema betRequest) =>
+            async (HttpRequest request, JwtService jwtService, BetWinnerService winnerService, BetSchema betRequest) =>
             {
                 try
                 {
-                    var bet = await winnerService.PlaceBet(betRequest);
-                    return Results.Accepted(bet.Probability.ToString());
+                    string token = request.Headers.Authorization.ToString().Replace("Bearer ", "");
+
+                    string userId = jwtService.GetUserId(token);
+                    string userName = jwtService.GetUserName(token);
+                    betRequest.Id = null;
+                    betRequest.UserId = userId;
+                    betRequest.Username = userName;
+                    betRequest.BetType = BetType.Compete;
+
+                    await winnerService.PlaceBet(betRequest);
+                    return Results.Accepted();
                 }
                 catch (Exception ex)
                 {
@@ -183,12 +220,21 @@ public static class Program
             }).RequireAuthorization();
 
         app.MapPost("/bet/topn",
-            async (BetTopNService topNService, BetSchema betRequest) =>
+            async (HttpRequest request, JwtService jwtService, BetTopNService topNService, BetSchema betRequest) =>
             {
                 try
                 {
-                    var bet = await topNService.PlaceBet(betRequest);
-                    return Results.Accepted(bet.Probability.ToString());
+                    string token = request.Headers.Authorization.ToString().Replace("Bearer ", "");
+
+                    string userId = jwtService.GetUserId(token);
+                    string userName = jwtService.GetUserName(token);
+                    betRequest.Id = null;
+                    betRequest.UserId = userId;
+                    betRequest.Username = userName;
+                    betRequest.BetType = BetType.Compete;
+
+                    await topNService.PlaceBet(betRequest);
+                    return Results.Accepted();
                 }
                 catch (Exception ex)
                 {
@@ -196,11 +242,10 @@ public static class Program
                 }
             }).RequireAuthorization();
 
-        // app.UseHttpsRedirection();
         var cur1 = app.RunAsync();
         var cur2 = Task.Run(async () =>
         {
-            var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+            var timer = new PeriodicTimer(TimeSpan.FromMinutes(5));
 
             using var scope = app.Services.CreateScope();
             var updateService = scope.ServiceProvider.GetRequiredService<UpdateService>();

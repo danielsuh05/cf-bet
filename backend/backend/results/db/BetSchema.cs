@@ -10,6 +10,7 @@ public class BetSchema
     public string? Id { get; set; } // set by mongodb
 
     public string? UserId { get; set; } // set by authorization
+    public string? Username { get; set; } // set by authorization
     public int ContestId { get; set; }
 
     public BetType BetType { get; set; } // set by frontend

@@ -16,6 +16,9 @@ public class MongoDbContext
     public IMongoCollection<UserSchema> Users => _database.GetCollection<UserSchema>("Users");
     public IMongoCollection<ContestSchema> Contests => _database.GetCollection<ContestSchema>("Contests");
 
+    public IMongoCollection<BetSchema> Bets =>
+        _database.GetCollection<BetSchema>("Bets");
+
     public IMongoCollection<ContestStatusSchema> ContestStatuses =>
         _database.GetCollection<ContestStatusSchema>("ContestStatuses");
 
