@@ -12,5 +12,5 @@ public class UserSchema
     public string? Username { get; set; }
     public string? PasswordHash { get; set; }
 
-    public double MoneyBalance { get; set; }
+    public decimal MoneyBalance { get; set; }
 }

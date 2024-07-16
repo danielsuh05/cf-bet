@@ -5,7 +5,7 @@ using MongoDB.Driver;
 
 namespace backend.services;
 
-public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext context)
+public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext context, MongoDbService DbService)
 {
     public async Task CheckContests()
     {
@@ -28,6 +28,7 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
                 Status = ContestStatus.Incomplete
             }).ToList();
 
+        // code above + this if statement adds new contests to ContestStatuses
         if (newContestStatusDocuments.Count > 0)
         {
             await context.ContestStatuses.InsertManyAsync(newContestStatusDocuments);
@@ -49,6 +50,15 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
     {
         // get the most recently finished contest
         var contests = await codeforcesClient.GetCurrentContests();
+
+
+        // TODO: REMOVE TESTING
+        {
+            var testFilter = Builders<ContestStatusSchema>.Filter.Where(contest => contest.ContestId == 1988);
+            var update1 = Builders<ContestStatusSchema>.Update.Set(contest => contest.Status, ContestStatus.Closed);
+
+            await context.ContestStatuses.UpdateManyAsync(testFilter, update1);
+        }
 
         var currentContests = contests.Where(contest =>
                 contest!.Phase == "CODING" || contest.Phase == "PENDING_SYSTEM_TEST" || contest.Phase == "SYSTEM_TEST")
@@ -84,6 +94,105 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
 
         // incomplete contests are the contests we need to update
         // TODO: add logic for if the top person doesn't participate in the contest
+        foreach (var contest in incompleteContests)
+        {
+            int contestId = contest.ContestId;
+            Console.WriteLine(contestId);
+            var rankings = await codeforcesClient.GetRankings(contestId);
+            if (rankings == null)
+            {
+                throw new Exception("Could not get rankings from Codeforces API.");
+            }
+
+            foreach (var u in rankings)
+            {
+                Console.WriteLine(u.Handle);
+            }
+
+            var contestFilter = Builders<BetSchema>.Filter.Where(bet => bet.ContestId == contestId);
+            var bets = await context.Bets.Find(contestFilter).ToListAsync();
+
+            foreach (var currentBet in bets)
+            {
+                bool hit = false;
+                bool invalid = false;
+
+                int handleRanking;
+
+                switch (currentBet.BetType)
+                {
+                    case BetType.Compete:
+                        int ranking1 = rankings.FindIndex(b => b.Handle == currentBet.BetHandle1);
+                        int ranking2 = rankings.FindIndex(b => b.Handle == currentBet.BetHandle2);
+
+                        Console.WriteLine(ranking1);
+                        Console.WriteLine(ranking2);
+
+                        if (ranking1 == -1 && ranking2 == -1)
+                        {
+                            invalid = true;
+                        }
+
+                        if (ranking2 == -1 || ranking1 < ranking2)
+                        {
+                            hit = true;
+                        }
+
+                        break;
+                    case BetType.Winner:
+                        handleRanking = rankings.FindIndex(b => b.Handle == currentBet.WinnerBetHandle);
+
+                        if (handleRanking == 0)
+                        {
+                            hit = true;
+                        }
+
+                        break;
+                    case BetType.TopN:
+                        handleRanking = rankings.FindIndex(b => b.Handle == currentBet.TopNBetHandle);
+                        int? predictedRanking = currentBet.Ranking;
+
+                        if (handleRanking < predictedRanking)
+                        {
+                            hit = true;
+                        }
+
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                var betFilter = Builders<BetSchema>.Filter.Eq(b => b.Id, currentBet.Id);
+
+                // if they both placed out of t250, don't do anything
+                if (invalid)
+                {
+                    continue;
+                }
+
+                if (hit)
+                {
+                    decimal profit = currentBet.InitialBet / (decimal)currentBet.Probability!;
+                    Console.WriteLine("profit: " + profit);
+
+                    var updateBet = Builders<BetSchema>.Update.Set(b => b.ProfitLoss, profit - currentBet.InitialBet);
+                    var updateHit = Builders<BetSchema>.Update.Set(b => b.Status, BetStatus.Hit);
+
+                    await context.Bets.UpdateOneAsync(betFilter, updateBet);
+                    await context.Bets.UpdateOneAsync(betFilter, updateHit);
+
+                    decimal balance = await DbService.GetBalance(currentBet.UserId!);
+                    await DbService.SetBalance(currentBet.UserId!, balance + profit);
+                }
+                else
+                {
+                    var updateBet = Builders<BetSchema>.Update.Set(b => b.ProfitLoss, -currentBet.InitialBet);
+                    var updateMiss = Builders<BetSchema>.Update.Set(b => b.Status, BetStatus.Miss);
+                    await context.Bets.UpdateOneAsync(betFilter, updateBet);
+                    await context.Bets.UpdateOneAsync(betFilter, updateMiss);
+                }
+            }
+        }
     }
 
     public async Task GetCompetitors()
@@ -110,7 +219,7 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
                 });
             }
 
-            await context.ContestCompetitors.UpdateOneAsync(filter, update);
+            await context.ContestCompetitors.UpdateManyAsync(filter, update);
         }
     }
 }

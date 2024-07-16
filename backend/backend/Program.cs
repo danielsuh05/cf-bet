@@ -153,15 +153,12 @@ public static class Program
             }
         });
 
-        app.MapGet("/userbets/{userid:int}",
-            async (MongoDbService service, JwtService jwtService, HttpRequest request) =>
+        app.MapGet("/userbets/{userid}",
+            async (MongoDbService service, string userid) =>
             {
                 try
                 {
-                    string token = request.Headers.Authorization.ToString().Replace("Bearer ", "");
-
-                    string userId = jwtService.GetUserId(token);
-                    var result = service.GetUserBets(userId);
+                    var result = await service.GetUserBets(userid);
 
                     return Results.Ok(result);
                 }
@@ -171,6 +168,21 @@ public static class Program
                 }
             });
 
+
+        app.MapGet("/usercontestbets/{userid}:{contestId:int}",
+            async (MongoDbService service, string userid, int contestId) =>
+            {
+                try
+                {
+                    var result = await service.GetUserContestBets(userid, contestId);
+
+                    return Results.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(ex.Message);
+                }
+            });
 
         app.MapPost("/bet/compete",
             async (HttpRequest request, JwtService jwtService, BetCompeteService competeService,
@@ -245,7 +257,7 @@ public static class Program
         var cur1 = app.RunAsync();
         var cur2 = Task.Run(async () =>
         {
-            var timer = new PeriodicTimer(TimeSpan.FromMinutes(5));
+            var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
 
             using var scope = app.Services.CreateScope();
             var updateService = scope.ServiceProvider.GetRequiredService<UpdateService>();
@@ -268,10 +280,14 @@ public static class Program
                 // var sw = new Stopwatch();
                 // sw.Start();
 
-                Console.WriteLine("Updating Contest Information...");
+                Console.WriteLine("Checking contests...");
                 await updateService.CheckContests();
+                Console.WriteLine("Updating contests...");
                 await updateService.UpdateContests();
+                Console.WriteLine("Getting competitors...");
                 await updateService.GetCompetitors();
+
+                break;
 
                 // sw.Stop();
                 // Console.WriteLine("Elapsed={0}", sw.Elapsed);

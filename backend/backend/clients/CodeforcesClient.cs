@@ -1,3 +1,4 @@
+using System.Net;
 using backend.interfaces;
 using backend.results.codeforces;
 using backend.utils;
@@ -105,6 +106,32 @@ public class CodeforcesClient(HttpClient client) : ICodeforcesClient
             const int n = 250;
 
             return ParseContestRegistrantHtml(responseBody, n);
+        }
+        catch (HttpRequestException e)
+        {
+            throw new RestException(e.StatusCode, e.Message);
+        }
+    }
+
+    public async Task<List<Member>?> GetRankings(int id)
+    {
+        try
+        {
+            var url =
+                $"https://codeforces.com/api/contest.standings?contestId={id}&asManager=false&from=1&count=250&showUnofficial=true";
+            var response = await client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            string responseBody = await response.Content.ReadAsStringAsync();
+
+            var apiResponse = JsonConvert.DeserializeObject<ContestInfo>(responseBody);
+            if (apiResponse == null)
+            {
+                throw new RestException(HttpStatusCode.NotFound, "Did not find the contest from Codeforces API");
+            }
+
+            var results = apiResponse.Result!.Rows!.Select(row => row.Party!.Members!.First()).ToList();
+            return results;
         }
         catch (HttpRequestException e)
         {

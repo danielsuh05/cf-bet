@@ -49,14 +49,54 @@ public class MongoDbService(MongoDbContext context)
     {
         try
         {
-            var filter = Builders<BetSchema>.Filter.Eq(user => user.UserId, userId);
+            var filter = Builders<BetSchema>.Filter.Eq(bet => bet.UserId, userId);
             var bets = await context.Bets.Find(filter).ToListAsync();
-            if (bets == null || bets.Count == 0)
-            {
-                throw new Exception($"Could not find any bets associated with the user ${userId}");
-            }
 
             return bets;
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
+    }
+
+    public async Task<List<BetSchema>> GetUserContestBets(string userId, int contestId)
+    {
+        try
+        {
+            var filter = Builders<BetSchema>.Filter.Eq(user => user.UserId, userId) &
+                         Builders<BetSchema>.Filter.Eq(bet => bet.ContestId, contestId);
+            var bets = await context.Bets.Find(filter).ToListAsync();
+
+            return bets;
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
+    }
+
+    public async Task<decimal> GetBalance(string userId)
+    {
+        try
+        {
+            var filter = Builders<UserSchema>.Filter.Eq(user => user.Id, userId);
+            return (await context.Users.Find(filter).ToListAsync()).First().MoneyBalance;
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
+    }
+
+    public async Task SetBalance(string userId, decimal balance)
+    {
+        try
+        {
+            var filter = Builders<UserSchema>.Filter.Eq(user => user.Id, userId);
+            var update = Builders<UserSchema>.Update.Set(user => user.MoneyBalance, balance);
+
+            await context.Users.UpdateOneAsync(filter, update);
         }
         catch (Exception e)
         {

@@ -32,6 +32,12 @@ public class BetTopNService(MongoDbService service)
     {
         try
         {
+            decimal userBalance = await service.GetBalance(schema.UserId!);
+            if (userBalance - schema.InitialBet < 0)
+            {
+                throw new RestException(HttpStatusCode.Forbidden, $"Insufficient balance");
+            }
+
             string handle = schema.TopNBetHandle!;
             int? topN = schema.Ranking!;
 
@@ -48,6 +54,7 @@ public class BetTopNService(MongoDbService service)
 
             schema.Probability = probability;
             schema.Status = BetStatus.Pending;
+            await service.SetBalance(schema.UserId!, userBalance - schema.InitialBet);
 
             await service.PutBet(schema);
         }
