@@ -52,6 +52,14 @@ public static class Program
 
             builder.Services.AddAuthorization();
 
+            builder.Services.AddCors(o => o.AddPolicy("policy", policyBuilder =>
+            {
+                policyBuilder.WithOrigins("*")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+            }));
+
+
             // utils
             builder.Services.AddSingleton(new MongoDbContext(mongoConnectionString!, mongoDatabaseName!));
             builder.Services.AddSingleton(new JwtService(jwtSecret!));
@@ -308,6 +316,8 @@ public static class Program
                     return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
                 }
             }).RequireAuthorization();
+
+        app.UseCors("policy");
 
         var cur1 = app.RunAsync();
         var cur2 = Task.Run(async () =>

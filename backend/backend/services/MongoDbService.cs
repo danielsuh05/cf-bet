@@ -153,6 +153,7 @@ public class MongoDbService(MongoDbContext context)
                 Name = contest.Name,
                 Type = contest.Type,
                 Phase = contest.Phase,
+                Id = contest.ContestId,
                 Frozen = contest.Frozen,
                 DurationSeconds = contest.DurationSeconds,
                 StartTimeSeconds = contest.StartTimeSeconds,

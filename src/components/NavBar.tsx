@@ -14,12 +14,12 @@ export default function NavBar() {
         <Link href="/" className="font-bold text-inherit">cf-bet</Link>
       </NavbarBrand>
       <NavbarContent className="hidden sm:flex gap-4" justify="center">
-        <NavbarItem>
+        <NavbarItem isActive>
           <Link color="foreground" href="/">
             Home
           </Link>
         </NavbarItem>
-        <NavbarItem isActive>
+        <NavbarItem>
           <Link color="foreground" href="/contests" >
             Contests
           </Link>
