@@ -1,10 +1,15 @@
 import NavBar from "../components/NavBar";
+import RankingsTable from "../components/RankingsTable";
 
 function Rankings() {
   return (
     <>
-      <h1>Rankings</h1>
       <NavBar />
+      <div className="flex justify-center items-center">
+        <div className="w-1/3">
+          <RankingsTable />
+        </div>
+      </div>
     </>
   );
 }

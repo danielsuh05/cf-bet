@@ -1,10 +1,13 @@
+import MyBetsTable from "../components/MyBetsTable";
 import NavBar from "../components/NavBar";
 
 function MyBets() {
   return (
     <>
-      <h1>MyBets</h1>
       <NavBar />
+      <div className="ml-48 mr-48">
+        <MyBetsTable />
+      </div>
     </>
   );
 }

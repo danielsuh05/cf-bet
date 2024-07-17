@@ -26,7 +26,7 @@ const columns = [
   },
 ];
 
-export default function Contests() {
+export default function ContestsTable() {
   const [contests, setContests] = useState([]);
 
   useEffect(() => {
@@ -43,12 +43,7 @@ export default function Contests() {
 
   return (
     <>
-      <Table
-        aria-label="Example static collection table"
-        selectionMode="single"
-        isStriped
-        color="default"
-      >
+      <Table selectionMode="single" isStriped color="default">
         <TableHeader columns={columns}>
           {(column) => (
             <TableColumn key={column.key}>{column.label}</TableColumn>

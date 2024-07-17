@@ -4,9 +4,10 @@ import NavBar from "../components/NavBar";
 function Contests() {
   return (
     <>
-      <h1>Contests</h1>
       <NavBar />
-      <ContestsTable />
+      <div className="ml-48 mr-48">
+        <ContestsTable />
+      </div>
     </>
   );
 }
