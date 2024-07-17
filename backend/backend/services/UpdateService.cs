@@ -5,15 +5,15 @@ using MongoDB.Driver;
 
 namespace backend.services;
 
-public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext context, MongoDbService DbService)
+public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext context, MongoDbService dbService)
 {
     public async Task CheckContests()
     {
         var contests = await codeforcesClient.GetCurrentContests();
-        List<ContestStatusSchema> schemas = new List<ContestStatusSchema>();
-        List<ContestSchema> contestSchemas = new List<ContestSchema>();
+        var schemas = new List<ContestStatusSchema>();
+        var contestSchemas = new List<ContestSchema>();
 
-        var contestIds = contests.Select(c => c!.Id).ToList();
+        var contestIds = contests.Select(c => c.Id).ToList();
         var existingContestStatuses = await context.ContestStatuses
             .Find(Builders<ContestStatusSchema>.Filter.In(cs => cs.ContestId, contestIds))
             .ToListAsync();
@@ -24,9 +24,9 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
             .ToListAsync();
         var existingContestIdsForContests = existingContests.Select(c => c.ContestId).ToHashSet();
 
-        var tasks = contests.Select(async contest =>
+        var tasks = contests.Select(contest =>
         {
-            if (!existingContestIds.Contains(contest!.Id))
+            if (!existingContestIds.Contains(contest.Id))
             {
                 var tempSchema = new ContestStatusSchema
                 {
@@ -36,21 +36,21 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
                 schemas.Add(tempSchema);
             }
 
-            if (!existingContestIdsForContests.Contains(contest!.Id))
+            if (existingContestIdsForContests.Contains(contest.Id)) return Task.CompletedTask;
+            var tempContestSchema = new ContestSchema
             {
-                var tempContestSchema = new ContestSchema
-                {
-                    ContestId = contest.Id,
-                    Name = contest.Name,
-                    Type = contest.Type,
-                    Phase = contest.Phase,
-                    Frozen = contest.Frozen,
-                    DurationSeconds = contest.DurationSeconds,
-                    StartTimeSeconds = contest.StartTimeSeconds,
-                    RelativeTimeSeconds = contest.RelativeTimeSeconds
-                };
-                contestSchemas.Add(tempContestSchema);
-            }
+                ContestId = contest.Id,
+                Name = contest.Name,
+                Type = contest.Type,
+                Phase = contest.Phase,
+                Frozen = contest.Frozen,
+                DurationSeconds = contest.DurationSeconds,
+                StartTimeSeconds = contest.StartTimeSeconds,
+                RelativeTimeSeconds = contest.RelativeTimeSeconds
+            };
+            contestSchemas.Add(tempContestSchema);
+
+            return Task.CompletedTask;
         }).ToList();
 
         await Task.WhenAll(tasks);
@@ -80,12 +80,12 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
         }
 
         var currentContests = contests.Where(contest =>
-                contest!.Phase == "CODING" || contest.Phase == "PENDING_SYSTEM_TEST" || contest.Phase == "SYSTEM_TEST")
-            .Select(contest => contest!.Id)
+                contest.Phase == "CODING" || contest.Phase == "PENDING_SYSTEM_TEST" || contest.Phase == "SYSTEM_TEST")
+            .Select(contest => contest.Id)
             .ToHashSet();
 
-        var finishedContests = contests.Where(contest => contest!.Phase == "FINISHED")
-            .Select(contest => contest!.Id)
+        var finishedContests = contests.Where(contest => contest.Phase == "FINISHED")
+            .Select(contest => contest.Id)
             .ToHashSet();
 
         var currentContestsFilter =
@@ -118,16 +118,10 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
             if (contest.ContestId < 1980) break;
 
             int contestId = contest.ContestId;
-            Console.WriteLine(contestId);
             var rankings = await codeforcesClient.GetRankings(contestId);
             if (rankings == null)
             {
                 throw new Exception("Could not get rankings from Codeforces API.");
-            }
-
-            foreach (var u in rankings)
-            {
-                Console.WriteLine(u.Handle);
             }
 
             var contestFilter = Builders<BetSchema>.Filter.Where(bet => bet.ContestId == contestId);
@@ -198,10 +192,10 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
                     var updateInvalid = Builders<BetSchema>.Update.Set(b => b.Status, BetStatus.Invalid);
                     await context.Bets.UpdateOneAsync(betFilter, updateInvalid);
 
-                    decimal balance = await DbService.GetBalance(currentBet.UserId!);
-                    
+                    decimal balance = await dbService.GetBalance(currentBet.Username!);
+
                     // refund user
-                    await DbService.SetBalance(currentBet.UserId!, balance + currentBet.InitialBet);
+                    await dbService.SetBalance(currentBet.Username!, balance + currentBet.InitialBet);
                     continue;
                 }
 
@@ -216,8 +210,8 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
                     await context.Bets.UpdateOneAsync(betFilter, updateBet);
                     await context.Bets.UpdateOneAsync(betFilter, updateHit);
 
-                    decimal balance = await DbService.GetBalance(currentBet.UserId!);
-                    await DbService.SetBalance(currentBet.UserId!, balance + profit);
+                    decimal balance = await dbService.GetBalance(currentBet.Username!);
+                    await dbService.SetBalance(currentBet.Username!, balance + profit);
                 }
                 else
                 {
@@ -233,11 +227,11 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
     public async Task GetCompetitors()
     {
         var contests = await codeforcesClient.GetCurrentContests();
-        var beforeContests = contests.Where(contest => contest!.Phase == "BEFORE");
+        var beforeContests = contests.Where(contest => contest.Phase == "BEFORE");
 
         foreach (var currentPreContest in beforeContests)
         {
-            var competitors = await codeforcesClient.GetTopNCompetitors(currentPreContest!.Id);
+            var competitors = await codeforcesClient.GetTopNCompetitors(currentPreContest.Id);
 
             var filter =
                 Builders<ContestCompetitorsSchema>.Filter.Eq(contest => contest.ContestId,

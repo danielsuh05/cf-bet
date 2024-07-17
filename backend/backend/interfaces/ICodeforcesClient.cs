@@ -6,7 +6,7 @@ public interface ICodeforcesClient
 {
     public Task<UserResult?> GetUserInfo(string username);
 
-    public Task<List<Contest?>> GetCurrentContests();
+    public Task<List<Contest>> GetCurrentContests();
 
     public Task<List<Competitor>?> GetTopNCompetitors(int id);
 

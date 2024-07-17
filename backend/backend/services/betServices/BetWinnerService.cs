@@ -28,7 +28,7 @@ public class BetWinnerService(MongoDbService service)
     {
         try
         {
-            decimal userBalance = await service.GetBalance(schema.UserId!);
+            decimal userBalance = await service.GetBalance(schema.Username!);
             if (userBalance - schema.InitialBet < 0)
             {
                 throw new RestException(HttpStatusCode.Forbidden, $"Insufficient balance");
@@ -49,13 +49,17 @@ public class BetWinnerService(MongoDbService service)
 
             schema.Probability = probability;
             schema.Status = BetStatus.Pending;
-            await service.SetBalance(schema.UserId!, userBalance - schema.InitialBet);
+            await service.SetBalance(schema.Username!, userBalance - schema.InitialBet);
 
             await service.PutBet(schema);
         }
-        catch (RestException e)
+        catch (RestException)
         {
-            throw new Exception(e.ErrorMessage);
+            throw;
+        }
+        catch (Exception e)
+        {
+            throw new RestException(HttpStatusCode.InternalServerError, e.Message);
         }
     }
 }

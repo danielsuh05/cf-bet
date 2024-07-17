@@ -1,4 +1,3 @@
-using backend.results.codeforces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 

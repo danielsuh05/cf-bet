@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using backend.clients;
 using backend.interfaces;
@@ -61,7 +62,6 @@ public static class Program
 
             // services
             builder.Services.AddSingleton<MongoDbService>();
-            builder.Services.AddSingleton<CodeforcesContestService>();
 
             // bet services
             builder.Services.AddSingleton<BetCompeteService>();
@@ -123,7 +123,7 @@ public static class Program
                 }
                 catch (RestException ex)
                 {
-                    return Results.Problem(ex.Message, statusCode: (int)ex.Code!);
+                    return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
                 }
             });
 
@@ -136,7 +136,7 @@ public static class Program
             }
             catch (RestException ex)
             {
-                return Results.Problem(ex.Message, statusCode: (int)ex.Code!);
+                return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
             }
         });
 
@@ -149,38 +149,51 @@ public static class Program
             }
             catch (RestException ex)
             {
-                return Results.Problem(ex.Message, statusCode: (int)ex.Code!);
+                return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
             }
         });
 
-        app.MapGet("/userbets/{userid}",
-            async (MongoDbService service, string userid) =>
+        app.MapGet("/conteststatus/{id:int}", async (MongoDbService service, int id) =>
+        {
+            try
+            {
+                var status = await service.GetContestStatus(id);
+                return Results.Ok(status);
+            }
+            catch (RestException ex)
+            {
+                return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
+            }
+        });
+
+        app.MapGet("/userbets/{username}",
+            async (MongoDbService service, string username) =>
             {
                 try
                 {
-                    var result = await service.GetUserBets(userid);
+                    var result = await service.GetUserBets(username);
 
                     return Results.Ok(result);
                 }
-                catch (Exception ex)
+                catch (RestException ex)
                 {
-                    return Results.Problem(ex.Message);
+                    return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
                 }
             });
 
 
-        app.MapGet("/usercontestbets/{userid}:{contestId:int}",
-            async (MongoDbService service, string userid, int contestId) =>
+        app.MapGet("/usercontestbets/{username}:{contestId:int}",
+            async (MongoDbService service, string username, int contestId) =>
             {
                 try
                 {
-                    var result = await service.GetUserContestBets(userid, contestId);
+                    var result = await service.GetUserContestBets(username, contestId);
 
                     return Results.Ok(result);
                 }
-                catch (Exception ex)
+                catch (RestException ex)
                 {
-                    return Results.Problem(ex.Message);
+                    return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
                 }
             });
 
@@ -192,9 +205,9 @@ public static class Program
 
                 return Results.Ok(result);
             }
-            catch (Exception ex)
+            catch (RestException ex)
             {
-                return Results.Problem(ex.Message);
+                return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
             }
         });
 
@@ -206,9 +219,9 @@ public static class Program
 
                 return Results.Ok(result);
             }
-            catch (Exception ex)
+            catch (RestException ex)
             {
-                return Results.Problem(ex.Message);
+                return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
             }
         });
 
@@ -220,9 +233,9 @@ public static class Program
 
                 return Results.Ok(result);
             }
-            catch (Exception ex)
+            catch (RestException ex)
             {
-                return Results.Problem(ex.Message);
+                return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
             }
         });
 
@@ -244,9 +257,9 @@ public static class Program
                     await competeService.PlaceBet(betRequest);
                     return Results.Accepted();
                 }
-                catch (Exception ex)
+                catch (RestException ex)
                 {
-                    return Results.Problem(ex.Message);
+                    return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
                 }
             }).RequireAuthorization();
 
@@ -267,9 +280,9 @@ public static class Program
                     await winnerService.PlaceBet(betRequest);
                     return Results.Accepted();
                 }
-                catch (Exception ex)
+                catch (RestException ex)
                 {
-                    return Results.Problem(ex.Message);
+                    return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)HttpStatusCode.NotFound);
                 }
             }).RequireAuthorization();
 
@@ -290,15 +303,16 @@ public static class Program
                     await topNService.PlaceBet(betRequest);
                     return Results.Accepted();
                 }
-                catch (Exception ex)
+                catch (RestException ex)
                 {
-                    return Results.Problem(ex.Message);
+                    return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
                 }
             }).RequireAuthorization();
 
         var cur1 = app.RunAsync();
         var cur2 = Task.Run(async () =>
         {
+            return;
             var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
 
             using var scope = app.Services.CreateScope();
