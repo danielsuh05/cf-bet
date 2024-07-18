@@ -9,6 +9,7 @@ import {
 } from "@nextui-org/table";
 import { getKeyValue } from "@nextui-org/react";
 import { getRankings } from "../services/contestService";
+import { numberWithCommas } from "../utils/utils";
 
 const columns = [
   {
@@ -16,8 +17,8 @@ const columns = [
     label: "USERNAME",
   },
   {
-    key: "pl",
-    label: "TOTAL PROFIT/LOSS",
+    key: "moneyBalance",
+    label: "BALANCE",
   },
 ];
 
@@ -28,6 +29,7 @@ export default function RankingsTable() {
     async function fetchUserRankings() {
       try {
         const response = await getRankings();
+        console.log(response);
         setUsers(response);
       } catch (error) {
         console.error("Error fetching contests:", error);
@@ -48,7 +50,23 @@ export default function RankingsTable() {
           {(item: any) => (
             <TableRow key={item.relativeTimeSeconds}>
               {(columnKey) => (
-                <TableCell>{getKeyValue(item, columnKey)}</TableCell>
+                <TableCell>
+                  {columnKey === "username" ? (
+                    <a
+                      href={`http://localhost:8000/user/${getKeyValue(
+                        item,
+                        columnKey
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600"
+                    >
+                      {getKeyValue(item, columnKey)}
+                    </a>
+                  ) : (
+                    "$" + numberWithCommas(getKeyValue(item, columnKey))
+                  )}
+                </TableCell>
               )}
             </TableRow>
           )}

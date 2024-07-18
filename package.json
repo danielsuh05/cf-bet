@@ -13,9 +13,12 @@
   "dependencies": {
     "@nextui-org/navbar": "^2.0.33",
     "@nextui-org/react": "^2.4.2",
+    "apexcharts": "^3.50.0",
     "axios": "^1.7.2",
     "framer-motion": "^11.2.12",
     "react": "^18.3.1",
+    "react-apexcharts": "^1.4.1",
+    "react-cookie": "^7.1.4",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.25.0"
   },

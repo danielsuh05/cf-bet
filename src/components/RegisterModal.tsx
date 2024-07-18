@@ -11,19 +11,18 @@ import {
 } from "@nextui-org/react";
 import { useState } from "react";
 import { useCookies } from "react-cookie";
-import { login } from "../services/userService";
+import { register } from "../services/userService";
 
-export default function LoginModal() {
+export default function RegisterModal() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [, setJwtCookie] = useCookies(["jwt"]);
-  const [, setUsernameCookie] = useCookies(["username"]);
+  const [, setCookie] = useCookies(["jwt"]);
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     try {
-      const response = await login(username, password);
+      const response = await register(username, password);
 
       if (response == undefined) {
         throw new Error(response.detail);
@@ -33,14 +32,8 @@ export default function LoginModal() {
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + 14);
 
-      setJwtCookie("jwt", response.token, {
-        path: "/",
-        expires: expirationDate,
-      });
-      setUsernameCookie("username", response.username, {
-        path: "/",
-        expires: expirationDate,
-      });
+      const { token } = response;
+      setCookie("jwt", token, { path: "/", expires: expirationDate });
 
       // Close the modal
       onOpenChange();
@@ -54,17 +47,19 @@ export default function LoginModal() {
     <>
       <Button
         onPress={onOpen}
-        color="primary"
+        color="secondary"
         variant="flat"
         className="font-bold"
       >
-        Login
+        Register
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="top-center">
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">Log in</ModalHeader>
+              <ModalHeader className="flex flex-col gap-1">
+                Register
+              </ModalHeader>
               <ModalBody>
                 <Input
                   autoFocus
@@ -100,7 +95,7 @@ export default function LoginModal() {
                 >
                   Close
                 </Button>
-                <Button color="primary" onPress={handleLogin}>
+                <Button color="primary" onPress={handleRegister}>
                   Sign in
                 </Button>
               </ModalFooter>

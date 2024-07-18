@@ -6,7 +6,7 @@ function Rankings() {
     <>
       <NavBar />
       <div className="flex justify-center items-center">
-        <div className="w-1/3">
+        <div className="max-w-[700px] w-full">
           <RankingsTable />
         </div>
       </div>

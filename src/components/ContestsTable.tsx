@@ -22,7 +22,7 @@ const columns = [
   },
   {
     key: "link",
-    label: "LINK",
+    label: "BET",
   },
 ];
 
@@ -46,17 +46,19 @@ export default function ContestsTable() {
       <Table selectionMode="single" isStriped color="default">
         <TableHeader columns={columns}>
           {(column) => (
-            <TableColumn key={column.key}>{column.label}</TableColumn>
+            <TableColumn className="min-w-[190px]" key={column.key}>
+              {column.label}
+            </TableColumn>
           )}
         </TableHeader>
-        <TableBody items={contests}>
+        <TableBody items={contests} emptyContent="No active contests.">
           {(item: any) => (
             <TableRow key={item.relativeTimeSeconds}>
               {(columnKey) => (
                 <TableCell>
                   {columnKey === "link" ? (
                     <a
-                      href={`https://localhost:8000/contest/${item.id}`}
+                      href={`http://localhost:8000/contest/${item.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600"

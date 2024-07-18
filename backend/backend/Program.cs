@@ -127,7 +127,7 @@ public static class Program
                 try
                 {
                     string token = await loginService.Register(request.Username!, request.Password!);
-                    return Results.Ok(new { Token = token });
+                    return Results.Ok(new { Token = token, Username = request.Username! });
                 }
                 catch (RestException ex)
                 {
@@ -140,7 +140,21 @@ public static class Program
             try
             {
                 string token = await loginService.Login(request.Username!, request.Password!);
-                return Results.Ok(new { Token = token });
+                return Results.Ok(new { Token = token, Username = request.Username! });
+            }
+            catch (RestException ex)
+            {
+                return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
+            }
+        });
+
+
+        app.MapGet("/user/{username}", async (MongoDbService service, string username) =>
+        {
+            try
+            {
+                var user = await service.GetUser(username);
+                return Results.Ok(user);
             }
             catch (RestException ex)
             {

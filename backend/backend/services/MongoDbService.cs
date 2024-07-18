@@ -38,11 +38,11 @@ public class MongoDbService(MongoDbContext context)
             var filter = Builders<BetSchema>.Filter.Eq(contest => contest.ContestId, bet.ContestId) &
                          Builders<BetSchema>.Filter.Eq(contest => contest.Username, bet.Username);
 
-            // bet already placed
-            if (await context.Bets.Find(filter).AnyAsync())
-            {
-                throw new RestException(HttpStatusCode.BadRequest, "Bet already placed for this contest.");
-            }
+            // // bet already placed
+            // if (await context.Bets.Find(filter).AnyAsync())
+            // {
+            //     throw new RestException(HttpStatusCode.BadRequest, "Bet already placed for this contest.");
+            // }
 
             await context.Bets.InsertOneAsync(bet);
         }
@@ -84,7 +84,9 @@ public class MongoDbService(MongoDbContext context)
         try
         {
             var filter = Builders<BetSchema>.Filter.Eq(bet => bet.Username, username);
-            var bets = await context.Bets.Find(filter).ToListAsync();
+            var sort = Builders<BetSchema>.Sort.Descending(bet => bet.ContestId);
+
+            var bets = await context.Bets.Find(filter).Sort(sort).ToListAsync();
 
             return bets;
         }
@@ -158,7 +160,7 @@ public class MongoDbService(MongoDbContext context)
                 DurationSeconds = contest.DurationSeconds,
                 StartTimeSeconds = contest.StartTimeSeconds,
                 RelativeTimeSeconds = contest.RelativeTimeSeconds
-            }).ToList();
+            }).OrderBy(c => c.StartTimeSeconds).ToList();
 
             return retContests;
         }
@@ -198,6 +200,98 @@ public class MongoDbService(MongoDbContext context)
                 .ToListAsync();
 
             return rankings;
+        }
+        catch (Exception e)
+        {
+            throw new RestException(HttpStatusCode.InternalServerError, e.Message);
+        }
+    }
+
+    private async Task<int> GetUserRank(string username)
+    {
+        try
+        {
+            var filter = Builders<UserSchema>.Filter.Empty;
+            var sort = Builders<UserSchema>.Sort.Ascending(u =>
+                u.MoneyBalance);
+
+            var rankings = await context.Users
+                .Find(filter)
+                .Sort(sort)
+                .ToListAsync();
+
+            int userRank =
+                rankings.FindIndex(user => user.Username == username) + 1;
+
+            if (userRank == 0)
+            {
+                throw new RestException(HttpStatusCode.NotFound, "User not found in rankings.");
+            }
+
+            return userRank;
+        }
+        catch (Exception e)
+        {
+            throw new RestException(HttpStatusCode.InternalServerError, e.Message);
+        }
+    }
+
+    private async Task<int> GetNumUsers()
+    {
+        try
+        {
+            var filter = Builders<UserSchema>.Filter.Empty;
+
+            long numUsers = await context.Users.CountDocumentsAsync(filter);
+
+            return (int)numUsers;
+        }
+        catch (Exception e)
+        {
+            throw new RestException(HttpStatusCode.InternalServerError, e.Message);
+        }
+    }
+
+    private async Task<decimal> GetHitPercentage(string username)
+    {
+        try
+        {
+            var filter = Builders<BetSchema>.Filter.Eq(bet => bet.Username, username) &
+                         Builders<BetSchema>.Filter.Eq(bet => bet.Status, BetStatus.Hit);
+            var emptyFilter = Builders<BetSchema>.Filter.Eq(bet => bet.Username, username);
+
+            int hitBets = (await context.Bets.Find(filter).ToListAsync()).Count;
+            int allBets = (await context.Bets.Find(emptyFilter).ToListAsync()).Count;
+
+            return allBets == 0 ? 0 : (decimal)hitBets / allBets;
+        }
+        catch (RestException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            throw new RestException(HttpStatusCode.InternalServerError, e.Message);
+        }
+    }
+
+
+    public async Task<UserProfile> GetUser(string username)
+    {
+        try
+        {
+            var ret = new UserProfile();
+
+            var filter = Builders<UserSchema>.Filter.Eq(user => user.Username, username);
+
+            var user = (await context.Users.Find(filter).ToListAsync()).First();
+
+            ret.Username = username;
+            ret.MoneyBalance = user.MoneyBalance;
+            ret.Rank = await GetUserRank(username) + "/" + await GetNumUsers();
+            ret.HitPercentage = await GetHitPercentage(username);
+
+            return ret;
         }
         catch (Exception e)
         {

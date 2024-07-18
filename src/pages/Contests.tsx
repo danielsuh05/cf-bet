@@ -5,8 +5,10 @@ function Contests() {
   return (
     <>
       <NavBar />
-      <div className="ml-48 mr-48">
-        <ContestsTable />
+      <div className="flex items-center justify-center w-full">
+        <div className="w-full max-w-[1200px]">
+          <ContestsTable />
+        </div>
       </div>
     </>
   );

@@ -9,6 +9,7 @@ import {
 } from "@nextui-org/table";
 import { getKeyValue } from "@nextui-org/react";
 import { getUserBets } from "../services/userService";
+import { secondsToDate } from "../utils/utils";
 
 const columns = [
   {
@@ -16,33 +17,62 @@ const columns = [
     label: "DETAILS",
   },
   {
-    key: "contest",
-    label: "CONTEST",
+    key: "contestId",
+    label: "CONTEST ID",
+  },
+  {
+    key: "status",
+    label: "HIT?",
   },
   {
     key: "date",
     label: "DATE",
   },
   {
-    key: "profitloss",
+    key: "profitLoss",
     label: "PROFIT/LOSS",
   },
 ];
 
-export default function MyBetsTable() {
+export default function MyBetsTable({ username }: { username: any }) {
   const [bets, setBets] = useState([]);
 
   useEffect(() => {
     async function fetchMyBets() {
       try {
-        const response = await getUserBets("danielsuh", "jwt");
+        const response = await getUserBets(username);
         setBets(response);
       } catch (error) {
         console.error("Error fetching contests:", error);
       }
     }
     fetchMyBets();
-  }, []);
+  }, [username]);
+
+  const getBetString = (item: any) => {
+    if (item.betType === 0) {
+      // compete
+      return `${item.betHandle1} will beat ${item.betHandle2}`;
+    } else if (item.betType === 1) {
+      // top n
+      return `${item.topNBetHandle} will be top ${item.topNBetHandle}`;
+    } else {
+      // winner
+      return `${item.winnerBetHandle} will win the contest`;
+    }
+  };
+
+  const getStatus = (item: any) => {
+    if (item.status === 0) {
+      return "Hit";
+    } else if (item.status === 1) {
+      return "Miss";
+    } else if (item.status === 2) {
+      return "Pending";
+    } else {
+      return "Invalid";
+    }
+  };
 
   return (
     <>
@@ -52,11 +82,41 @@ export default function MyBetsTable() {
             <TableColumn key={column.key}>{column.label}</TableColumn>
           )}
         </TableHeader>
-        <TableBody items={bets}>
+        <TableBody items={bets} emptyContent="No bets.">
           {(item: any) => (
             <TableRow key={item.relativeTimeSeconds}>
               {(columnKey) => (
-                <TableCell>{getKeyValue(item, columnKey)}</TableCell>
+                <TableCell>
+                  {columnKey === "details" ? (
+                    getBetString(item)
+                  ) : columnKey === "date" ? (
+                    secondsToDate(item)
+                  ) : columnKey === "profitLoss" ? (
+                    <div
+                      className={
+                        getKeyValue(item, columnKey) <= 0
+                          ? "text-red-600"
+                          : "text-green-600"
+                      }
+                    >
+                      {getKeyValue(item, columnKey)}
+                    </div>
+                  ) : columnKey === "status" ? (
+                    <div
+                      className={
+                        getKeyValue(item, columnKey) == 1
+                          ? "text-red-600"
+                          : getKeyValue(item, columnKey) == 0
+                          ? "text-green-600"
+                          : "text-black"
+                      }
+                    >
+                      {getStatus(item)}
+                    </div>
+                  ) : (
+                    getKeyValue(item, columnKey)
+                  )}
+                </TableCell>
               )}
             </TableRow>
           )}
