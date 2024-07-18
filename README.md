@@ -56,6 +56,11 @@ $$
 
 See `usage.md` for details on how to register for cf-bet. 
 
+## Limitations
+1. The Monte-Carlo simulation does not reflect a real-life competition. The chances that tourist (currently number 1 on Codeforces) places first is higher than it should be. This is inflation [(See here)](https://codeforces.com/blog/entry/20762).
+2. Users may be unable to bet on a certain competitor if they do a last-minute registration and betting closes. There is no way to circumvent this, users are only allowed to bet on registered competitors for the contest.
+3. Unlike sports betting, users are unable to bet after the contest has started.
+
 ## License
 
 cf-bet is under the MIT License. See [LICENSE](./LICENSE) for more details.
