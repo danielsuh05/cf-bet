@@ -67,4 +67,37 @@ public class BetTopNService(MongoDbService service)
             throw new RestException(HttpStatusCode.InternalServerError, e.Message);
         }
     }
+
+    public async Task<BetSchema> GetBetDetails(BetSchema schema)
+    {
+        try
+        {
+            string handle = schema.TopNBetHandle!;
+            int? topN = schema.Ranking!;
+
+            var competitors = await service.GetTopNCompetitorsFromDb(schema.ContestId);
+
+            var competitor = competitors!.FirstOrDefault(c => c.Handle == handle);
+
+            if (competitor == null)
+            {
+                throw new RestException(HttpStatusCode.NotFound, $"Could not find user {handle}");
+            }
+
+            double probability = GetProbability(competitor.Ranking, topN, competitors!.Select(c => c.Ranking).ToList());
+
+            schema.Probability = probability;
+            schema.Status = BetStatus.Pending;
+
+            return schema;
+        }
+        catch (RestException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            throw new RestException(HttpStatusCode.InternalServerError, e.Message);
+        }
+    }
 }

@@ -31,3 +31,13 @@ export const getRankings = async () => {
     throw error;
   }
 };
+
+export const getCompetitors = async (id: number) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/contestcompetitors/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching competitors:", error);
+    throw error;
+  }
+};

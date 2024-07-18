@@ -38,6 +38,8 @@ export default function RankingsTable() {
     fetchUserRankings();
   }, []);
 
+  console.log(users);
+
   return (
     <>
       <Table selectionMode="single" isStriped color="default">

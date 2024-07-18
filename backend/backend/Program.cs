@@ -261,7 +261,55 @@ public static class Program
             }
         });
 
-        app.MapPost("/bet/compete",
+        app.MapPost("/bet/winner/details",
+            async (HttpRequest request, JwtService jwtService, BetWinnerService winnerService, BetSchema betRequest) =>
+            {
+                try
+                {
+                    string token = request.Headers.Authorization.ToString().Replace("Bearer ", "");
+
+                    string userId = jwtService.GetUserId(token);
+                    string userName = jwtService.GetUserName(token);
+                    betRequest.Id = null;
+                    betRequest.UserId = userId;
+                    betRequest.Username = userName;
+                    betRequest.BetType = BetType.Compete;
+
+                    var result = await winnerService.GetBetDetails(betRequest);
+                    return Results.Accepted(OddsConverter.GetAmericanOddsFromProbability((double)result.Probability!)
+                        .ToString());
+                }
+                catch (RestException ex)
+                {
+                    return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)HttpStatusCode.NotFound);
+                }
+            }).RequireAuthorization();
+
+        app.MapPost("/bet/topn/details",
+            async (HttpRequest request, JwtService jwtService, BetTopNService topNService, BetSchema betRequest) =>
+            {
+                try
+                {
+                    string token = request.Headers.Authorization.ToString().Replace("Bearer ", "");
+
+                    string userId = jwtService.GetUserId(token);
+                    string userName = jwtService.GetUserName(token);
+                    betRequest.Id = null;
+                    betRequest.UserId = userId;
+                    betRequest.Username = userName;
+                    betRequest.BetType = BetType.Compete;
+
+                    var result = await topNService.GetBetDetails(betRequest);
+                    return Results.Accepted(OddsConverter.GetAmericanOddsFromProbability((double)result.Probability!)
+                        .ToString());
+                }
+                catch (RestException ex)
+                {
+                    return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
+                }
+            }).RequireAuthorization();
+
+        app.MapPost("/bet/compete/details",
             async (HttpRequest request, JwtService jwtService, BetCompeteService competeService,
                 BetSchema betRequest) =>
             {
@@ -276,8 +324,9 @@ public static class Program
                     betRequest.Username = userName;
                     betRequest.BetType = BetType.Compete;
 
-                    await competeService.PlaceBet(betRequest);
-                    return Results.Accepted();
+                    var result = await competeService.GetBetDetails(betRequest);
+                    return Results.Accepted(OddsConverter.GetAmericanOddsFromProbability((double)result.Probability!)
+                        .ToString());
                 }
                 catch (RestException ex)
                 {
@@ -308,6 +357,30 @@ public static class Program
                 }
             }).RequireAuthorization();
 
+        app.MapPost("/bet/compete",
+            async (HttpRequest request, JwtService jwtService, BetCompeteService competeService,
+                BetSchema betRequest) =>
+            {
+                try
+                {
+                    string token = request.Headers.Authorization.ToString().Replace("Bearer ", "");
+
+                    string userId = jwtService.GetUserId(token);
+                    string userName = jwtService.GetUserName(token);
+                    betRequest.Id = null;
+                    betRequest.UserId = userId;
+                    betRequest.Username = userName;
+                    betRequest.BetType = BetType.Compete;
+
+                    await competeService.PlaceBet(betRequest);
+                    return Results.Accepted();
+                }
+                catch (RestException ex)
+                {
+                    return Results.Problem(detail: ex.ErrorMessage, statusCode: (int)ex.Code);
+                }
+            }).RequireAuthorization();
+
         app.MapPost("/bet/topn",
             async (HttpRequest request, JwtService jwtService, BetTopNService topNService, BetSchema betRequest) =>
             {
@@ -331,9 +404,11 @@ public static class Program
                 }
             }).RequireAuthorization();
 
+
         app.UseCors("policy");
 
         var cur1 = app.RunAsync();
+
         var cur2 = Task.Run(async () =>
         {
             return;
