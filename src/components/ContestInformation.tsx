@@ -6,7 +6,6 @@ import {
   Select,
   SelectItem,
   Input,
-  select,
   Divider,
   Button,
   CircularProgress,
@@ -199,8 +198,8 @@ export default function ContestInformation() {
   const [selectedCompetitor, setSelectedCompetitor] = useState<string>("");
   const [topNValue, setTopNValue] = useState<any>(-100);
   const [betAmount, setBetAmount] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [, setErrorMessage] = useState<string>("");
+  const [, setSuccessMessage] = useState<string>("");
   const [loader, setLoader] = useState<boolean>(false);
 
   const placeBet = async () => {

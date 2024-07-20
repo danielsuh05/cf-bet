@@ -5,6 +5,7 @@ import MyBetsTable from "./MyBetsTable";
 import { useEffect, useState } from "react";
 import { getUserBets, getUserInfo } from "../services/userService";
 import { numberWithCommas } from "../utils/utils";
+import { ApexOptions } from "apexcharts";
 
 export default function UserProfile() {
   const { username } = useParams();
@@ -71,55 +72,53 @@ export default function UserProfile() {
   };
 
   const Graph = () => {
-    const graphOptions = {
-      options: {
+    const graphOptions: ApexOptions = {
+      title: {
+        text: "Net Worth over Time",
+        align: "center",
+        style: {
+          fontSize: "20px",
+          fontFamily: "Inter, sans-serif",
+        },
+      },
+      xaxis: {
         title: {
-          text: "Net Worth over Time",
-          align: "middle",
+          text: "Bet Number",
+          offsetX: 0,
+          offsetY: 0,
           style: {
-            fontSize: "20px",
+            fontSize: "12px",
             fontFamily: "Inter, sans-serif",
+            fontWeight: 600,
+            cssClass: "apexcharts-xaxis-title",
           },
         },
-        xaxis: {
-          title: {
-            text: "Bet Number",
-            offsetX: 0,
-            offsetY: 0,
-            style: {
-              fontSize: "12px",
-              fontFamily: "Inter, sans-serif",
-              fontWeight: 600,
-              cssClass: "apexcharts-xaxis-title",
-            },
+      },
+      yaxis: {
+        title: {
+          text: "Net Worth",
+          offsetX: 0,
+          offsetY: 0,
+          style: {
+            fontSize: "12px",
+            fontFamily: "Inter, sans-serif",
+            fontWeight: 600,
+            cssClass: "apexcharts-yaxis-title",
           },
         },
-        yaxis: {
-          title: {
-            text: "Net Worth",
-            offsetX: 0,
-            offsetY: 0,
-            style: {
-              fontSize: "12px",
-              fontFamily: "Inter, sans-serif",
-              fontWeight: 600,
-              cssClass: "apexcharts-yaxis-title",
-            },
-          },
-          labels: {
-            formatter: (value: number) => {
-              return `$${numberWithCommas(value)}`;
-            },
+        labels: {
+          formatter: (value: number) => {
+            return `$${numberWithCommas(value)}`;
           },
         },
-        chart: {
-          animations: {
-            enabled: true,
-            easing: "easeout",
-            speed: 300,
-          },
-          foreColor: "var(--nextui-colors-accents9)",
+      },
+      chart: {
+        animations: {
+          enabled: true,
+          easing: "easeout",
+          speed: 300,
         },
+        foreColor: "var(--nextui-colors-accents9)",
       },
       series: [
         {
@@ -135,7 +134,7 @@ export default function UserProfile() {
           <div className="mixed-chart">
             {
               <Chart
-                options={graphOptions.options}
+                options={graphOptions}
                 series={graphOptions.series}
                 type="line"
               />
