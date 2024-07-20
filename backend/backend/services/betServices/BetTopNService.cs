@@ -12,12 +12,9 @@ public class BetTopNService(MongoDbService service)
         Parallel.For(0, MathUtils.CountMonteCarloSimulations, _ =>
         {
             double curWinnerElo = MathUtils.BoxMullerTransform(winnerElo, MathUtils.EloStd);
-            var numBetter = 0;
-            if (elos.Select(elo => MathUtils.BoxMullerTransform(elo, MathUtils.EloStd))
-                .Any(compElo => compElo > curWinnerElo))
-            {
-                numBetter++;
-            }
+            
+            int numBetter = elos.Select(elo => MathUtils.BoxMullerTransform(elo, MathUtils.EloStd))
+                .Count(curElo => curElo > curWinnerElo);
 
             if (numBetter < topN)
             {
@@ -25,7 +22,9 @@ public class BetTopNService(MongoDbService service)
             }
         });
 
-        return (double)numSuccess / MathUtils.CountMonteCarloSimulations;
+        Console.WriteLine(numSuccess);
+        Console.WriteLine(topN);
+        return Math.Min(Math.Max(0.001, (double)numSuccess / MathUtils.CountMonteCarloSimulations), 0.999);
     }
 
     public async Task PlaceBet(BetSchema schema)

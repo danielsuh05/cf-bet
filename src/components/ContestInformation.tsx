@@ -6,6 +6,10 @@ import {
   Select,
   SelectItem,
   Input,
+  select,
+  Divider,
+  Button,
+  CircularProgress,
 } from "@nextui-org/react";
 import { useParams } from "react-router-dom";
 import NavBar from "./NavBar";
@@ -26,7 +30,12 @@ import {
   getCompeteBetDetails,
   getTopNBetDetails,
   getWinnerBetDetails,
+  placeCompeteBet,
+  placeTopNBet,
+  placeWinnerBet,
 } from "../services/betService";
+import { getUserInfo } from "../services/userService";
+import { numberWithCommas } from "../utils/utils";
 
 const columns = [
   {
@@ -80,23 +89,20 @@ export const Compete = (props: any) => {
 
   return (
     <Select
-      items={competitors}
       label="Competitor to Beat"
       placeholder="Select another Competitor"
       className="max-w-xs"
       onChange={onCompetitorChange}
-      selectedKeys={selectedCompetitor}
+      selectedKeys={[selectedCompetitor]}
     >
-      {(competitor: any) => (
-        <SelectItem key={competitor.handle} value={competitor.handle}>
-          {competitor.handle}
-        </SelectItem>
-      )}
+      {competitors.map((competitor: any) => (
+        <SelectItem key={competitor.handle}>{competitor.handle}</SelectItem>
+      ))}
     </Select>
   );
 };
 
-export const SubmitBet = (props: any) => {
+export const BetInfo = (props: any) => {
   const {
     selectedBetOption,
     selectedCompetitor,
@@ -104,13 +110,18 @@ export const SubmitBet = (props: any) => {
     selectedRow,
     username,
     token,
+    contestId,
   } = props;
 
+  const [odds, setOdds] = useState("");
+  const [moneyBalance, setMoneyBalance] = useState(0.0);
+
   useEffect(() => {
-    async function fetchUserRankings() {
+    async function fetchProbability() {
       try {
-        const request = {
+        const request: any = {
           username: username,
+          contestId: contestId,
 
           betHandle1: selectedRow,
           betHandle2: selectedCompetitor,
@@ -133,13 +144,17 @@ export const SubmitBet = (props: any) => {
           line = await getWinnerBetDetails(token, request);
         }
 
-        console.log(line);
+        setOdds(line);
+
+        const user = await getUserInfo(username);
+        setMoneyBalance(user.moneyBalance);
       } catch (error) {
         console.error("Error fetching contests:", error);
       }
     }
-    fetchUserRankings();
+    fetchProbability();
   }, [
+    contestId,
     selectedBetOption,
     selectedCompetitor,
     selectedRow,
@@ -148,7 +163,26 @@ export const SubmitBet = (props: any) => {
     username,
   ]);
 
-  return <></>;
+  return (
+    <>
+      <div className="flex flex-col h-5 items-center text-large mt-4 gap-5 ml-2 mr-2">
+        <div className="flex flex-row">
+          Odds:
+          <div className={odds[0] === "-" ? "text-red-600" : "text-green-600"}>
+            &nbsp;{(odds[0] === "-" ? "" : "+") + odds}
+          </div>
+        </div>
+        <Divider
+          orientation="horizontal"
+          className="max-w-[300px] min-w-[250px]"
+        />
+        <div className="flex flex-row">
+          Your Balance:
+          <div>&nbsp;${numberWithCommas(moneyBalance)}</div>
+        </div>
+      </div>
+    </>
+  );
 };
 
 export default function ContestInformation() {
@@ -164,6 +198,48 @@ export default function ContestInformation() {
   const [selectedBetOption, setSelectedBetOption] = useState<string>("");
   const [selectedCompetitor, setSelectedCompetitor] = useState<string>("");
   const [topNValue, setTopNValue] = useState<any>(-100);
+  const [betAmount, setBetAmount] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [loader, setLoader] = useState<boolean>(false);
+
+  const placeBet = async () => {
+    setLoader(true);
+    const delay = (ms: any) => new Promise((res) => setTimeout(res, ms));
+    await delay(5000);
+    async function tryPlaceBet() {
+      try {
+        const request: any = {
+          username: username,
+          contestId: contestId,
+          initialBet: parseInt(betAmount),
+
+          betHandle1: selectedRow,
+          betHandle2: selectedCompetitor,
+
+          topNBetHandle: selectedRow,
+          ranking: topNValue,
+
+          winnerBetHandle: selectedRow,
+        };
+
+        if (selectedBetOption === "compete") {
+          await placeCompeteBet(jwtToken, request);
+        } else if (selectedBetOption === "topn") {
+          await placeTopNBet(jwtToken, request);
+        } else {
+          await placeWinnerBet(jwtToken, request);
+        }
+
+        setSuccessMessage("Bet placed successfully!");
+      } catch (error: any) {
+        setErrorMessage(error.response.data.detail);
+      }
+    }
+
+    await tryPlaceBet();
+    setLoader(false);
+  };
 
   useEffect(() => {
     async function fetchUserRankings() {
@@ -183,6 +259,7 @@ export default function ContestInformation() {
 
   const handleSelectionChange = (keys: any) => {
     const selectedKey = Array.from(keys)[0];
+
     setSelectedRow(selectedKey);
   };
 
@@ -190,8 +267,8 @@ export default function ContestInformation() {
     setSelectedBetOption(value);
   };
 
-  const handleCompetitorChange = (value: string) => {
-    setSelectedCompetitor(value);
+  const handleCompetitorChange = (e: any) => {
+    setSelectedCompetitor(e.target.value);
   };
 
   const handleTopNChange = (value: number) => {
@@ -287,25 +364,66 @@ export default function ContestInformation() {
                   ) : (
                     ""
                   )}
+
+                  {((selectedBetOption === "compete" &&
+                    selectedCompetitor !== "") ||
+                    (selectedBetOption === "topn" &&
+                      topNValue > 0 &&
+                      topNValue <= 250) ||
+                    selectedBetOption === "winner") &&
+                  selectedRow !== null ? (
+                    <div className="inline-grid grid-cols-3 justify-items-center items-center pl-5 pr-5 mt-5">
+                      <Card className="w-fit flex items-center justify-center mt-5">
+                        <CardBody className="min-h-[170px] w-fit">
+                          <BetInfo
+                            selectedBetOption={selectedBetOption}
+                            selectedCompetitor={selectedCompetitor}
+                            topNValue={topNValue}
+                            selectedRow={selectedRow}
+                            username={username}
+                            token={jwtToken}
+                            contestId={contestId}
+                          />
+                        </CardBody>
+                      </Card>
+                      <Divider orientation="vertical" className="h-[70%]" />
+                      <div className="flex flex-col items-center justify-items-center">
+                        <Input
+                          type="number"
+                          label="Bet Amount"
+                          placeholder="0.00"
+                          labelPlacement="outside"
+                          value={betAmount}
+                          onValueChange={setBetAmount}
+                          startContent={
+                            <div className="pointer-events-none flex items-center">
+                              <span className="text-default-400 text-small">
+                                $
+                              </span>
+                            </div>
+                          }
+                        />
+                        <Button
+                          onPress={placeBet}
+                          color="danger"
+                          variant="flat"
+                          className="font-bold mt-5 "
+                        >
+                          <span>Place Bet</span>
+                          {loader && (
+                            <CircularProgress
+                              color="danger"
+                              aria-label="Loading..."
+                              className="w-7 h-7"
+                            />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    ""
+                  )}
                 </CardBody>
-                {((selectedBetOption === "compete" &&
-                  selectedCompetitor !== "") ||
-                  (selectedBetOption === "topn" &&
-                    topNValue > 0 &&
-                    topNValue <= 250) ||
-                  selectedBetOption === "winner") &&
-                selectedRow !== null ? (
-                  <SubmitBet
-                    selectedBetOption={selectedBetOption}
-                    selectedCompetitor={selectedCompetitor}
-                    topNValue={topNValue}
-                    selectedRow={selectedRow}
-                    username={username}
-                    token={jwtToken}
-                  />
-                ) : (
-                  ""
-                )}
               </Card>
             </div>
           </div>

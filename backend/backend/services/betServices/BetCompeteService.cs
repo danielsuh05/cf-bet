@@ -8,7 +8,7 @@ public class BetCompeteService(MongoDbService service)
 {
     private static double GetProbability(int elo1, int elo2)
     {
-        return 1.0 / (1 + double.Pow(10.0, (elo2 - elo1) / 400.0));
+        return Math.Min(Math.Max(0.001, 1.0 / (1 + double.Pow(10.0, (elo2 - elo1) / 400.0))), 0.999);
     }
 
     public async Task PlaceBet(BetSchema schema)

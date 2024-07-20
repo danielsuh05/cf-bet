@@ -3,9 +3,9 @@ namespace backend.utils;
 public class MathUtils
 {
     // assuming normal distribution
-    public const double EloStd = 283;
+    public const double EloStd = 400;
 
-    public const int CountMonteCarloSimulations = 100000;
+    public const int CountMonteCarloSimulations = 10000;
 
     private static readonly Random Rand = new Random();
 

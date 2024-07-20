@@ -8,6 +8,7 @@ using backend.services;
 using backend.services.betServices;
 using backend.utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -262,7 +263,8 @@ public static class Program
         });
 
         app.MapPost("/bet/winner/details",
-            async (HttpRequest request, JwtService jwtService, BetWinnerService winnerService, BetSchema betRequest) =>
+            async (HttpRequest request, JwtService jwtService, BetWinnerService winnerService,
+                BetSchema betRequest) =>
             {
                 try
                 {
@@ -276,7 +278,9 @@ public static class Program
                     betRequest.BetType = BetType.Compete;
 
                     var result = await winnerService.GetBetDetails(betRequest);
-                    return Results.Accepted(OddsConverter.GetAmericanOddsFromProbability((double)result.Probability!)
+                    Console.WriteLine(result.Probability!);
+                    return Results.Accepted(value: OddsConverter
+                        .GetAmericanOddsFromProbability((double)result.Probability!)
                         .ToString());
                 }
                 catch (RestException ex)
@@ -300,7 +304,9 @@ public static class Program
                     betRequest.BetType = BetType.Compete;
 
                     var result = await topNService.GetBetDetails(betRequest);
-                    return Results.Accepted(OddsConverter.GetAmericanOddsFromProbability((double)result.Probability!)
+                    Console.WriteLine(result.Probability!);
+                    return Results.Accepted(value: OddsConverter
+                        .GetAmericanOddsFromProbability((double)result.Probability!)
                         .ToString());
                 }
                 catch (RestException ex)
@@ -325,7 +331,9 @@ public static class Program
                     betRequest.BetType = BetType.Compete;
 
                     var result = await competeService.GetBetDetails(betRequest);
-                    return Results.Accepted(OddsConverter.GetAmericanOddsFromProbability((double)result.Probability!)
+                    Console.WriteLine(result.Probability!);
+                    return Results.Accepted(value: OddsConverter
+                        .GetAmericanOddsFromProbability((double)result.Probability!)
                         .ToString());
                 }
                 catch (RestException ex)

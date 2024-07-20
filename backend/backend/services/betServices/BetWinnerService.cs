@@ -21,7 +21,7 @@ public class BetWinnerService(MongoDbService service)
             Interlocked.Increment(ref numWins);
         });
 
-        return (double)numWins / MathUtils.CountMonteCarloSimulations;
+        return Math.Min(Math.Max(0.001, (double)numWins / MathUtils.CountMonteCarloSimulations), 0.999);
     }
 
     public async Task PlaceBet(BetSchema schema)
