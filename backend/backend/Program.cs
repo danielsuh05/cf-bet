@@ -275,10 +275,9 @@ public static class Program
                     betRequest.Id = null;
                     betRequest.UserId = userId;
                     betRequest.Username = userName;
-                    betRequest.BetType = BetType.Compete;
+                    betRequest.BetType = BetType.Winner;
 
                     var result = await winnerService.GetBetDetails(betRequest);
-                    Console.WriteLine(result.Probability!);
                     return Results.Accepted(value: OddsConverter
                         .GetAmericanOddsFromProbability((double)result.Probability!)
                         .ToString());
@@ -301,10 +300,9 @@ public static class Program
                     betRequest.Id = null;
                     betRequest.UserId = userId;
                     betRequest.Username = userName;
-                    betRequest.BetType = BetType.Compete;
+                    betRequest.BetType = BetType.TopN;
 
                     var result = await topNService.GetBetDetails(betRequest);
-                    Console.WriteLine(result.Probability!);
                     return Results.Accepted(value: OddsConverter
                         .GetAmericanOddsFromProbability((double)result.Probability!)
                         .ToString());
@@ -331,7 +329,6 @@ public static class Program
                     betRequest.BetType = BetType.Compete;
 
                     var result = await competeService.GetBetDetails(betRequest);
-                    Console.WriteLine(result.Probability!);
                     return Results.Accepted(value: OddsConverter
                         .GetAmericanOddsFromProbability((double)result.Probability!)
                         .ToString());
@@ -354,7 +351,7 @@ public static class Program
                     betRequest.Id = null;
                     betRequest.UserId = userId;
                     betRequest.Username = userName;
-                    betRequest.BetType = BetType.Compete;
+                    betRequest.BetType = BetType.Winner;
 
                     await winnerService.PlaceBet(betRequest);
                     return Results.Accepted();
@@ -401,7 +398,7 @@ public static class Program
                     betRequest.Id = null;
                     betRequest.UserId = userId;
                     betRequest.Username = userName;
-                    betRequest.BetType = BetType.Compete;
+                    betRequest.BetType = BetType.TopN;
 
                     await topNService.PlaceBet(betRequest);
                     return Results.Accepted();
@@ -419,13 +416,12 @@ public static class Program
 
         var cur2 = Task.Run(async () =>
         {
-            return;
-            var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            var timer = new PeriodicTimer(TimeSpan.FromMinutes(10));
 
             using var scope = app.Services.CreateScope();
             var updateService = scope.ServiceProvider.GetRequiredService<UpdateService>();
 
-            while (await timer.WaitForNextTickAsync())
+            do
             {
                 Console.WriteLine("Checking contests...");
                 await updateService.CheckContests();
@@ -434,9 +430,7 @@ public static class Program
                 Console.WriteLine("Getting competitors...");
                 await updateService.GetCompetitors();
                 Console.WriteLine("Done");
-
-                break;
-            }
+            } while (await timer.WaitForNextTickAsync());
         });
 
         await Task.WhenAll(cur1, cur2);

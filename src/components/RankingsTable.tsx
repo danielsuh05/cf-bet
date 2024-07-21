@@ -29,7 +29,6 @@ export default function RankingsTable() {
     async function fetchUserRankings() {
       try {
         const response = await getRankings();
-        console.log(response);
         setUsers(response);
       } catch (error) {
         console.error("Error fetching contests:", error);
@@ -66,7 +65,12 @@ export default function RankingsTable() {
                       {getKeyValue(item, columnKey)}
                     </a>
                   ) : (
-                    "$" + numberWithCommas(getKeyValue(item, columnKey))
+                    "$" +
+                    numberWithCommas(
+                      parseFloat(
+                        parseFloat(getKeyValue(item, columnKey)).toFixed(2)
+                      )
+                    )
                   )}
                 </TableCell>
               )}

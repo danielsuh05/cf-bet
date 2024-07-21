@@ -35,6 +35,7 @@ import {
 } from "../services/betService";
 import { getUserInfo } from "../services/userService";
 import { numberWithCommas } from "../utils/utils";
+import MyBetsTable from "./MyBetsTable";
 
 const columns = [
   {
@@ -110,10 +111,11 @@ export const BetInfo = (props: any) => {
     username,
     token,
     contestId,
+    setMoneyBalance,
+    moneyBalance,
   } = props;
 
   const [odds, setOdds] = useState("");
-  const [moneyBalance, setMoneyBalance] = useState(0.0);
 
   useEffect(() => {
     async function fetchProbability() {
@@ -157,6 +159,7 @@ export const BetInfo = (props: any) => {
     selectedBetOption,
     selectedCompetitor,
     selectedRow,
+    setMoneyBalance,
     token,
     topNValue,
     username,
@@ -198,20 +201,20 @@ export default function ContestInformation() {
   const [selectedCompetitor, setSelectedCompetitor] = useState<string>("");
   const [topNValue, setTopNValue] = useState<any>(-100);
   const [betAmount, setBetAmount] = useState<string>("");
-  const [, setErrorMessage] = useState<string>("");
-  const [, setSuccessMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
   const [loader, setLoader] = useState<boolean>(false);
+  const [moneyBalance, setMoneyBalance] = useState<number>(-1);
+  const [refreshBets, setRefreshBets] = useState<boolean>(false);
 
   const placeBet = async () => {
     setLoader(true);
-    const delay = (ms: any) => new Promise((res) => setTimeout(res, ms));
-    await delay(5000);
     async function tryPlaceBet() {
       try {
         const request: any = {
           username: username,
           contestId: contestId,
-          initialBet: parseInt(betAmount),
+          initialBet: parseFloat(betAmount),
 
           betHandle1: selectedRow,
           betHandle2: selectedCompetitor,
@@ -230,13 +233,23 @@ export default function ContestInformation() {
           await placeWinnerBet(jwtToken, request);
         }
 
+        setErrorMessage("");
         setSuccessMessage("Bet placed successfully!");
+
+        setTimeout(() => {
+          setSuccessMessage("");
+        }, 5000);
       } catch (error: any) {
         setErrorMessage(error.response.data.detail);
       }
     }
 
     await tryPlaceBet();
+
+    const user = await getUserInfo(username);
+    setMoneyBalance(user.moneyBalance);
+    setRefreshBets(!refreshBets);
+
     setLoader(false);
   };
 
@@ -309,7 +322,7 @@ export default function ContestInformation() {
             <div className="h-full">
               <Card>
                 <CardBody className="p-5">
-                  <div className="font-semibold text-2xl mb-5">
+                  <div className="font-semibold text-3xl mb-5">
                     {selectedRow !== null
                       ? `Betting on ${selectedRow}:`
                       : "Select a User"}
@@ -382,6 +395,8 @@ export default function ContestInformation() {
                             username={username}
                             token={jwtToken}
                             contestId={contestId}
+                            moneyBalance={moneyBalance}
+                            setMoneyBalance={setMoneyBalance}
                           />
                         </CardBody>
                       </Card>
@@ -394,6 +409,11 @@ export default function ContestInformation() {
                           labelPlacement="outside"
                           value={betAmount}
                           onValueChange={setBetAmount}
+                          isInvalid={
+                            parseFloat(betAmount) <= 0 ||
+                            parseFloat(betAmount) > moneyBalance ||
+                            moneyBalance === -1
+                          }
                           startContent={
                             <div className="pointer-events-none flex items-center">
                               <span className="text-default-400 text-small">
@@ -413,15 +433,34 @@ export default function ContestInformation() {
                             <CircularProgress
                               color="danger"
                               aria-label="Loading..."
-                              className="w-7 h-7"
+                              size="sm"
                             />
                           )}
                         </Button>
+                        {errorMessage != "" && (
+                          <p style={{ color: "#f31260" }}>{errorMessage}</p>
+                        )}
+                        {errorMessage === "" && successMessage != "" && (
+                          <p style={{ color: "#16a34a", marginTop: "0.5rem" }}>
+                            {successMessage}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ) : (
                     ""
                   )}
+                </CardBody>
+              </Card>
+              <Card className="mt-5">
+                <CardBody className="p-5">
+                  <div className="font-semibold text-2xl mb-5">Your Bets</div>
+                  <MyBetsTable
+                    username={username}
+                    contestId={parseInt(contestId!)}
+                    removeWrapper={true}
+                    refreshBets={refreshBets}
+                  />
                 </CardBody>
               </Card>
             </div>

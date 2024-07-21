@@ -58,7 +58,10 @@ export default function UserProfile() {
           {/* todo */}
           <p className="tracking-widest underline">NET WORTH</p>
           <h1 className="font-bold text-2xl mb-3">
-            ${numberWithCommas(user.moneyBalance)}
+            $
+            {numberWithCommas(
+              parseFloat(parseFloat(user.moneyBalance).toFixed(2))
+            )}
           </h1>
           <p className="tracking-widest underline">HIT %</p>
           <h1 className="font-bold text-2xl mb-3">
@@ -108,7 +111,7 @@ export default function UserProfile() {
         },
         labels: {
           formatter: (value: number) => {
-            return `$${numberWithCommas(value)}`;
+            return `$${numberWithCommas(parseFloat(value.toFixed(2)))}`;
           },
         },
       },

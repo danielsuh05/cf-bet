@@ -202,7 +202,6 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
                 if (hit)
                 {
                     decimal profit = currentBet.InitialBet / (decimal)currentBet.Probability!;
-                    Console.WriteLine("profit: " + profit);
 
                     var updateBet = Builders<BetSchema>.Update.Set(b => b.ProfitLoss, profit - currentBet.InitialBet);
                     var updateHit = Builders<BetSchema>.Update.Set(b => b.Status, BetStatus.Hit);

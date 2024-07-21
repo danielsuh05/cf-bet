@@ -8,13 +8,16 @@ import {
   TableCell,
 } from "@nextui-org/table";
 import { getKeyValue } from "@nextui-org/react";
-import { getUserBets } from "../services/userService";
-import { secondsToDate } from "../utils/utils";
+import { getUserBets, getUserContestBets } from "../services/userService";
 
 const columns = [
   {
     key: "details",
     label: "DETAILS",
+  },
+  {
+    key: "initialBet",
+    label: "INITIAL BET",
   },
   {
     key: "contestId",
@@ -25,29 +28,41 @@ const columns = [
     label: "HIT?",
   },
   {
-    key: "date",
-    label: "DATE",
-  },
-  {
     key: "profitLoss",
     label: "PROFIT/LOSS",
   },
 ];
 
-export default function MyBetsTable({ username }: { username: any }) {
+export default function MyBetsTable({
+  username,
+  contestId = -1,
+  removeWrapper = false,
+  refreshBets = false,
+}: {
+  username: any;
+  contestId?: any;
+  removeWrapper?: boolean;
+  refreshBets?: boolean;
+}) {
   const [bets, setBets] = useState([]);
 
   useEffect(() => {
     async function fetchMyBets() {
       try {
-        const response = await getUserBets(username);
+        let response: any = null;
+        if (contestId === -1) {
+          response = await getUserBets(username);
+        } else {
+          response = await getUserContestBets(username, contestId);
+        }
+        if (response === null) throw new Error();
         setBets(response);
       } catch (error) {
         console.error("Error fetching contests:", error);
       }
     }
     fetchMyBets();
-  }, [username]);
+  }, [username, contestId, refreshBets]);
 
   const getBetString = (item: any) => {
     if (item.betType === 0) {
@@ -55,7 +70,7 @@ export default function MyBetsTable({ username }: { username: any }) {
       return `${item.betHandle1} will beat ${item.betHandle2}`;
     } else if (item.betType === 1) {
       // top n
-      return `${item.topNBetHandle} will be top ${item.topNBetHandle}`;
+      return `${item.topNBetHandle} will be top ${item.ranking}`;
     } else {
       // winner
       return `${item.winnerBetHandle} will win the contest`;
@@ -76,7 +91,13 @@ export default function MyBetsTable({ username }: { username: any }) {
 
   return (
     <>
-      <Table selectionMode="single" isStriped color="default">
+      <Table
+        selectionMode="single"
+        isStriped
+        color="default"
+        removeWrapper={removeWrapper}
+        className={removeWrapper ? "p-[1rem]" : "p-[0px]"}
+      >
         <TableHeader columns={columns}>
           {(column) => (
             <TableColumn key={column.key}>{column.label}</TableColumn>
@@ -89,8 +110,6 @@ export default function MyBetsTable({ username }: { username: any }) {
                 <TableCell>
                   {columnKey === "details" ? (
                     getBetString(item)
-                  ) : columnKey === "date" ? (
-                    secondsToDate(item)
                   ) : columnKey === "profitLoss" ? (
                     <div
                       className={
@@ -99,7 +118,15 @@ export default function MyBetsTable({ username }: { username: any }) {
                           : "text-green-600"
                       }
                     >
-                      {getKeyValue(item, columnKey)}
+                      {getKeyValue(item, columnKey) !== null
+                        ? parseFloat(getKeyValue(item, columnKey)).toFixed(2)
+                        : ""}
+                    </div>
+                  ) : columnKey === "initialBet" ? (
+                    <div>
+                      {getKeyValue(item, columnKey) !== null
+                        ? parseFloat(getKeyValue(item, columnKey)).toFixed(2)
+                        : ""}
                     </div>
                   ) : columnKey === "status" ? (
                     <div

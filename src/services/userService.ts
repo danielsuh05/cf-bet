@@ -50,17 +50,11 @@ export const getUserBets = async (username: string) => {
 
 export const getUserContestBets = async (
   username: string,
-  contestId: number,
-  token: string
+  contestId: number
 ) => {
   try {
     const response = await axios.get(
-      `${BASE_URL}/usercontestbets/${username}:${contestId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+      `${BASE_URL}/usercontestbets/${username}:${contestId}`
     );
     return response.data;
   } catch (error) {
