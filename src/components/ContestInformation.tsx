@@ -180,7 +180,9 @@ export const BetInfo = (props: any) => {
         />
         <div className="flex flex-row">
           Your Balance:
-          <div>&nbsp;${numberWithCommas(moneyBalance)}</div>
+          <div>
+            &nbsp;${numberWithCommas(parseFloat(moneyBalance.toFixed(2)))}
+          </div>
         </div>
       </div>
     </>
@@ -320,149 +322,163 @@ export default function ContestInformation() {
               </Table>
             </div>
             <div className="h-full">
-              <Card>
-                <CardBody className="p-5">
+              {jwtToken === undefined ? (
+                <Card className="p-5">
                   <div className="font-semibold text-3xl mb-5">
-                    {selectedRow !== null
-                      ? `Betting on ${selectedRow}:`
-                      : "Select a User"}
+                    Please log in.
                   </div>
-                  {selectedRow !== null ? (
-                    <RadioGroup
-                      label="Type of Bet"
-                      orientation="horizontal"
-                      onValueChange={handleChangeBetOption}
-                    >
-                      <CustomRadio
-                        description="User will place higher than another."
-                        value="compete"
-                      >
-                        Compete
-                      </CustomRadio>
-                      <CustomRadio
-                        description="User will place in the top N competitors."
-                        value="topn"
-                      >
-                        Top N
-                      </CustomRadio>
-                      <CustomRadio
-                        description="User will win the contest."
-                        value="winner"
-                      >
-                        Winner
-                      </CustomRadio>
-                    </RadioGroup>
-                  ) : (
-                    ""
-                  )}
-                  {selectedBetOption === "compete" && selectedRow !== null ? (
-                    <div className="mt-10">
-                      <div className="flex items-center justify-center">
-                        <p>{selectedRow} will beat &nbsp;</p>
-                        <Compete
-                          competitors={competitors}
-                          selectedCompetitor={selectedCompetitor}
-                          onCompetitorChange={handleCompetitorChange}
-                        />
-                      </div>
+                </Card>
+              ) : (
+                <Card>
+                  <CardBody className="p-5">
+                    <div className="font-semibold text-3xl mb-5">
+                      {selectedRow !== null
+                        ? `Betting on ${selectedRow}:`
+                        : "Select a User"}
                     </div>
-                  ) : selectedBetOption === "topn" && selectedRow !== null ? (
-                    <div className="flex items-center justify-center mt-10">
-                      <TopN
-                        value={topNValue}
-                        onValueChange={handleTopNChange}
-                      />
-                    </div>
-                  ) : (
-                    ""
-                  )}
-
-                  {((selectedBetOption === "compete" &&
-                    selectedCompetitor !== "") ||
-                    (selectedBetOption === "topn" &&
-                      topNValue > 0 &&
-                      topNValue <= 250) ||
-                    selectedBetOption === "winner") &&
-                  selectedRow !== null ? (
-                    <div className="inline-grid grid-cols-3 justify-items-center items-center pl-5 pr-5 mt-5">
-                      <Card className="w-fit flex items-center justify-center mt-5">
-                        <CardBody className="min-h-[170px] w-fit">
-                          <BetInfo
-                            selectedBetOption={selectedBetOption}
-                            selectedCompetitor={selectedCompetitor}
-                            topNValue={topNValue}
-                            selectedRow={selectedRow}
-                            username={username}
-                            token={jwtToken}
-                            contestId={contestId}
-                            moneyBalance={moneyBalance}
-                            setMoneyBalance={setMoneyBalance}
-                          />
-                        </CardBody>
-                      </Card>
-                      <Divider orientation="vertical" className="h-[70%]" />
-                      <div className="flex flex-col items-center justify-items-center">
-                        <Input
-                          type="number"
-                          label="Bet Amount"
-                          placeholder="0.00"
-                          labelPlacement="outside"
-                          value={betAmount}
-                          onValueChange={setBetAmount}
-                          isInvalid={
-                            parseFloat(betAmount) <= 0 ||
-                            parseFloat(betAmount) > moneyBalance ||
-                            moneyBalance === -1
-                          }
-                          startContent={
-                            <div className="pointer-events-none flex items-center">
-                              <span className="text-default-400 text-small">
-                                $
-                              </span>
-                            </div>
-                          }
-                        />
-                        <Button
-                          onPress={placeBet}
-                          color="danger"
-                          variant="flat"
-                          className="font-bold mt-5 "
+                    {selectedRow !== null ? (
+                      <RadioGroup
+                        label="Type of Bet"
+                        orientation="horizontal"
+                        onValueChange={handleChangeBetOption}
+                      >
+                        <CustomRadio
+                          description="User will place higher than another."
+                          value="compete"
                         >
-                          <span>Place Bet</span>
-                          {loader && (
-                            <CircularProgress
-                              color="danger"
-                              aria-label="Loading..."
-                              size="sm"
-                            />
-                          )}
-                        </Button>
-                        {errorMessage != "" && (
-                          <p style={{ color: "#f31260" }}>{errorMessage}</p>
-                        )}
-                        {errorMessage === "" && successMessage != "" && (
-                          <p style={{ color: "#16a34a", marginTop: "0.5rem" }}>
-                            {successMessage}
-                          </p>
-                        )}
+                          Compete
+                        </CustomRadio>
+                        <CustomRadio
+                          description="User will place in the top N competitors."
+                          value="topn"
+                        >
+                          Top N
+                        </CustomRadio>
+                        <CustomRadio
+                          description="User will win the contest."
+                          value="winner"
+                        >
+                          Winner
+                        </CustomRadio>
+                      </RadioGroup>
+                    ) : (
+                      ""
+                    )}
+                    {selectedBetOption === "compete" && selectedRow !== null ? (
+                      <div className="mt-10">
+                        <div className="flex items-center justify-center">
+                          <p>{selectedRow} will beat &nbsp;</p>
+                          <Compete
+                            competitors={competitors}
+                            selectedCompetitor={selectedCompetitor}
+                            onCompetitorChange={handleCompetitorChange}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    ""
-                  )}
-                </CardBody>
-              </Card>
-              <Card className="mt-5">
-                <CardBody className="p-5">
-                  <div className="font-semibold text-2xl mb-5">Your Bets</div>
-                  <MyBetsTable
-                    username={username}
-                    contestId={parseInt(contestId!)}
-                    removeWrapper={true}
-                    refreshBets={refreshBets}
-                  />
-                </CardBody>
-              </Card>
+                    ) : selectedBetOption === "topn" && selectedRow !== null ? (
+                      <div className="flex items-center justify-center mt-10">
+                        <TopN
+                          value={topNValue}
+                          onValueChange={handleTopNChange}
+                        />
+                      </div>
+                    ) : (
+                      ""
+                    )}
+
+                    {((selectedBetOption === "compete" &&
+                      selectedCompetitor !== "") ||
+                      (selectedBetOption === "topn" &&
+                        topNValue > 0 &&
+                        topNValue <= 250) ||
+                      selectedBetOption === "winner") &&
+                    selectedRow !== null ? (
+                      <div className="inline-grid grid-cols-3 justify-items-center items-center pl-5 pr-5 mt-5">
+                        <Card className="w-fit flex items-center justify-center mt-5">
+                          <CardBody className="min-h-[170px] w-fit">
+                            <BetInfo
+                              selectedBetOption={selectedBetOption}
+                              selectedCompetitor={selectedCompetitor}
+                              topNValue={topNValue}
+                              selectedRow={selectedRow}
+                              username={username}
+                              token={jwtToken}
+                              contestId={contestId}
+                              moneyBalance={moneyBalance}
+                              setMoneyBalance={setMoneyBalance}
+                            />
+                          </CardBody>
+                        </Card>
+                        <Divider orientation="vertical" className="h-[70%]" />
+                        <div className="flex flex-col items-center justify-items-center">
+                          <Input
+                            type="number"
+                            label="Bet Amount"
+                            placeholder="0.00"
+                            labelPlacement="outside"
+                            value={betAmount}
+                            onValueChange={setBetAmount}
+                            isInvalid={
+                              parseFloat(betAmount) <= 0 ||
+                              parseFloat(betAmount) > moneyBalance ||
+                              moneyBalance === -1
+                            }
+                            startContent={
+                              <div className="pointer-events-none flex items-center">
+                                <span className="text-default-400 text-small">
+                                  $
+                                </span>
+                              </div>
+                            }
+                          />
+                          <Button
+                            onPress={placeBet}
+                            color="danger"
+                            variant="flat"
+                            className="font-bold mt-5 "
+                          >
+                            <span>Place Bet</span>
+                            {loader && (
+                              <CircularProgress
+                                color="danger"
+                                aria-label="Loading..."
+                                size="sm"
+                              />
+                            )}
+                          </Button>
+                          {errorMessage != "" && (
+                            <p style={{ color: "#f31260" }}>{errorMessage}</p>
+                          )}
+                          {errorMessage === "" && successMessage != "" && (
+                            <p
+                              style={{ color: "#16a34a", marginTop: "0.5rem" }}
+                            >
+                              {successMessage}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      ""
+                    )}
+                  </CardBody>
+                </Card>
+              )}
+              {jwtToken === undefined ? (
+                ""
+              ) : (
+                <Card className="mt-5">
+                  <CardBody className="p-5">
+                    <div className="font-semibold text-2xl mb-5">Your Bets</div>
+                    <MyBetsTable
+                      username={username}
+                      contestId={parseInt(contestId!)}
+                      removeWrapper={true}
+                      refreshBets={refreshBets}
+                    />
+                  </CardBody>
+                </Card>
+              )}
             </div>
           </div>
         </div>

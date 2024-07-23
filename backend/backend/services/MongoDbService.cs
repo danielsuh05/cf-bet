@@ -191,7 +191,7 @@ public class MongoDbService(MongoDbContext context)
         try
         {
             var filter = Builders<UserSchema>.Filter.Empty;
-            var sort = Builders<UserSchema>.Sort.Ascending(u => u.MoneyBalance);
+            var sort = Builders<UserSchema>.Sort.Descending(u => u.MoneyBalance);
 
             var rankings = await context.Users
                 .Find(filter)

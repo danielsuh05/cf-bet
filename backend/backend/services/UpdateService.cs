@@ -71,14 +71,6 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
         // get the most recently finished contest
         var contests = await codeforcesClient.GetCurrentContests();
 
-        // // For testing purposes
-        {
-            var testFilter = Builders<ContestStatusSchema>.Filter.Where(contest => contest.ContestId == 1988);
-            var update1 = Builders<ContestStatusSchema>.Update.Set(contest => contest.Status, ContestStatus.Closed);
-
-            await context.ContestStatuses.UpdateManyAsync(testFilter, update1);
-        }
-
         var currentContests = contests.Where(contest =>
                 contest.Phase == "CODING" || contest.Phase == "PENDING_SYSTEM_TEST" || contest.Phase == "SYSTEM_TEST")
             .Select(contest => contest.Id)
@@ -116,6 +108,11 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
         {
             // just don't process contests before cf-bet existed
             if (contest.ContestId < 1980) break;
+
+            var contestUpdate = Builders<ContestSchema>.Update
+                .Set(schema => schema.Phase, "FINISHED");
+            var contestSchemaFilter = Builders<ContestSchema>.Filter.Eq(schema => schema.ContestId, contest.ContestId);
+            await context.Contests.UpdateManyAsync(contestSchemaFilter, contestUpdate);
 
             int contestId = contest.ContestId;
             var rankings = await codeforcesClient.GetRankings(contestId);
@@ -226,7 +223,7 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
     public async Task GetCompetitors()
     {
         var contests = await codeforcesClient.GetCurrentContests();
-        var beforeContests = contests.Where(contest => contest.Phase == "BEFORE");
+        var beforeContests = contests.Where(contest => contest.Phase == "BEFORE") ;
 
         foreach (var currentPreContest in beforeContests)
         {
