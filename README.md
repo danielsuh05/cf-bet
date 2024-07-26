@@ -62,8 +62,6 @@ $$
 4. Update the values in the new `.env` file with your API keys and port selection.
 5. Run `npm run start` or `npm run dev` in the root of the repository and `./backend`.
 
-See `usage.md` for details on how to register for cf-bet.
-
 ## Limitations
 1. The Monte-Carlo simulation does not perfectly reflect real-life competition. For example, the chances that tourist (currently number 1 on Codeforces) places first are higher than they should be. This is due to inflation [(See here)](https://codeforces.com/blog/entry/20762).
 2. Users may be unable to bet on certain competitors if they register at the last minute and betting has closed. There is no way to circumvent this; users can only bet on registered competitors for the contest.
