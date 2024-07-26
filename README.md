@@ -1,7 +1,7 @@
 # cf-bet
 ## Overview
 
-VIDEO HERE
+https://github.com/user-attachments/assets/bfc9abe8-ddd3-4157-8fdd-0891f7cada04
 
 cf-bet is a sports betting application for Codeforces competitions. Users can select a type of bet, and the backend will perform a Monte-Carlo simulation of the competition. Probabilities and lines are generated from the simulation, determining the payout for a given bet.
 
