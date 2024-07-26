@@ -19,11 +19,6 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
             .ToListAsync();
         var existingContestIds = existingContestStatuses.Select(cs => cs.ContestId).ToHashSet();
 
-        var existingContests = await context.Contests
-            .Find(Builders<ContestSchema>.Filter.In(c => c.ContestId, contestIds))
-            .ToListAsync();
-        var existingContestIdsForContests = existingContests.Select(c => c.ContestId).ToHashSet();
-
         var tasks = contests.Select(contest =>
         {
             if (!existingContestIds.Contains(contest.Id))
@@ -36,7 +31,6 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
                 schemas.Add(tempSchema);
             }
 
-            if (existingContestIdsForContests.Contains(contest.Id)) return Task.CompletedTask;
             var tempContestSchema = new ContestSchema
             {
                 ContestId = contest.Id,
@@ -62,6 +56,8 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
 
         if (contestSchemas.Count > 0)
         {
+            var deleteFilter = Builders<ContestSchema>.Filter.Empty;
+            await context.Contests.DeleteManyAsync(deleteFilter);
             await context.Contests.InsertManyAsync(contestSchemas);
         }
     }
@@ -108,11 +104,6 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
         {
             // just don't process contests before cf-bet existed
             if (contest.ContestId < 1980) break;
-
-            var contestUpdate = Builders<ContestSchema>.Update
-                .Set(schema => schema.Phase, "FINISHED");
-            var contestSchemaFilter = Builders<ContestSchema>.Filter.Eq(schema => schema.ContestId, contest.ContestId);
-            await context.Contests.UpdateManyAsync(contestSchemaFilter, contestUpdate);
 
             int contestId = contest.ContestId;
             var rankings = await codeforcesClient.GetRankings(contestId);
@@ -223,7 +214,7 @@ public class UpdateService(ICodeforcesClient codeforcesClient, MongoDbContext co
     public async Task GetCompetitors()
     {
         var contests = await codeforcesClient.GetCurrentContests();
-        var beforeContests = contests.Where(contest => contest.Phase == "BEFORE") ;
+        var beforeContests = contests.Where(contest => contest.Phase == "BEFORE");
 
         foreach (var currentPreContest in beforeContests)
         {

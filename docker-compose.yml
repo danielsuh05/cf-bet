@@ -1,0 +1,28 @@
+services:
+  backend.api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=3000
+      - ASPNETCORE_HTTPS_PORTS=3001
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=test
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/cfbet.pfx
+    container_name: backend.api
+    image: backend.api
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - ~/.aspnet/https:/https:ro
+  backend.client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: backend.client
+    container_name: backend.client
+    ports:
+      - "5000:5000"
+    depends_on:
+      - backend.api

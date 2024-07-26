@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:5228";
+const BASE_URL = "http://localhost:3000";
 
 export const register = async (username: string, password: string) => {
   try {

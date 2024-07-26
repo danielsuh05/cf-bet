@@ -35,15 +35,6 @@ public class MongoDbService(MongoDbContext context)
     {
         try
         {
-            var filter = Builders<BetSchema>.Filter.Eq(contest => contest.ContestId, bet.ContestId) &
-                         Builders<BetSchema>.Filter.Eq(contest => contest.Username, bet.Username);
-
-            // // bet already placed
-            // if (await context.Bets.Find(filter).AnyAsync())
-            // {
-            //     throw new RestException(HttpStatusCode.BadRequest, "Bet already placed for this contest.");
-            // }
-
             await context.Bets.InsertOneAsync(bet);
         }
         catch (RestException)
@@ -87,6 +78,7 @@ public class MongoDbService(MongoDbContext context)
             var sort = Builders<BetSchema>.Sort.Descending(bet => bet.ContestId);
 
             var bets = await context.Bets.Find(filter).Sort(sort).ToListAsync();
+            bets = bets.OrderByDescending(b => b.Date).ToList();
 
             return bets;
         }
@@ -107,6 +99,7 @@ public class MongoDbService(MongoDbContext context)
             var filter = Builders<BetSchema>.Filter.Eq(user => user.Username, username) &
                          Builders<BetSchema>.Filter.Eq(bet => bet.ContestId, contestId);
             var bets = await context.Bets.Find(filter).ToListAsync();
+            bets = bets.OrderByDescending(b => b.Date).ToList();
 
             return bets;
         }
@@ -178,6 +171,8 @@ public class MongoDbService(MongoDbContext context)
 
             var bets = await context.Bets.Find(filter).ToListAsync();
 
+            bets = bets.OrderByDescending(b => b.Date).ToList();
+
             return bets;
         }
         catch (Exception e)
@@ -191,13 +186,13 @@ public class MongoDbService(MongoDbContext context)
         try
         {
             var filter = Builders<UserSchema>.Filter.Empty;
-            var sort = Builders<UserSchema>.Sort.Descending(u => u.MoneyBalance);
 
             var rankings = await context.Users
                 .Find(filter)
-                .Sort(sort)
                 .Limit(250)
                 .ToListAsync();
+
+            rankings = rankings.OrderByDescending(u => u.MoneyBalance).ToList();
 
             return rankings;
         }
@@ -212,13 +207,12 @@ public class MongoDbService(MongoDbContext context)
         try
         {
             var filter = Builders<UserSchema>.Filter.Empty;
-            var sort = Builders<UserSchema>.Sort.Ascending(u =>
-                u.MoneyBalance);
-
             var rankings = await context.Users
                 .Find(filter)
-                .Sort(sort)
+                .Limit(250)
                 .ToListAsync();
+
+            rankings = rankings.OrderByDescending(u => u.MoneyBalance).ToList();
 
             int userRank =
                 rankings.FindIndex(user => user.Username == username) + 1;

@@ -26,7 +26,7 @@ public class CodeforcesClient(HttpClient client) : ICodeforcesClient
 
             return apiResponse.Result.First();
         }
-        catch (RestException e)
+        catch (RestException)
         {
             throw;
         }

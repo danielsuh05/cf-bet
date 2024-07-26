@@ -58,7 +58,7 @@ export default function ContestsTable() {
                 <TableCell>
                   {columnKey === "link" ? (
                     <a
-                      href={`http://localhost:8000/contest/${item.id}`}
+                      href={`http://localhost:5000/contest/${item.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600"

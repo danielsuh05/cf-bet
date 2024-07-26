@@ -8,7 +8,6 @@ using backend.services;
 using backend.services.betServices;
 using backend.utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -18,15 +17,13 @@ public static class Program
 {
     public static async Task Main(string[] args)
     {
-        string root = Directory.GetCurrentDirectory();
-        string dotenv = Path.Combine(root, ".env");
-        DotEnv.Load(dotenv);
-
         var builder = WebApplication.CreateBuilder(args);
 
-        string? mongoConnectionString = Environment.GetEnvironmentVariable("MONGO_CONNECTION_STRING");
-        string? mongoDatabaseName = Environment.GetEnvironmentVariable("MONGO_DATABASE_NAME");
-        string? jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+        builder.Configuration.AddEnvironmentVariables();
+
+        string? mongoConnectionString = builder.Configuration["MONGO_CONNECTION_STRING"];
+        string? mongoDatabaseName = builder.Configuration["MONGO_DATABASE_NAME"];
+        string? jwtSecret = builder.Configuration["JWT_SECRET"];
 
         {
             builder.Services.AddAuthentication(cfg =>
@@ -352,6 +349,7 @@ public static class Program
                     betRequest.UserId = userId;
                     betRequest.Username = userName;
                     betRequest.BetType = BetType.Winner;
+                    betRequest.Date = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
                     await winnerService.PlaceBet(betRequest);
                     return Results.Accepted();
@@ -376,6 +374,7 @@ public static class Program
                     betRequest.UserId = userId;
                     betRequest.Username = userName;
                     betRequest.BetType = BetType.Compete;
+                    betRequest.Date = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
                     await competeService.PlaceBet(betRequest);
                     return Results.Accepted();
@@ -399,6 +398,7 @@ public static class Program
                     betRequest.UserId = userId;
                     betRequest.Username = userName;
                     betRequest.BetType = BetType.TopN;
+                    betRequest.Date = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
                     await topNService.PlaceBet(betRequest);
                     return Results.Accepted();

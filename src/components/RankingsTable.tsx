@@ -54,7 +54,7 @@ export default function RankingsTable() {
                 <TableCell>
                   {columnKey === "username" ? (
                     <a
-                      href={`http://localhost:8000/user/${getKeyValue(
+                      href={`http://localhost:5000/user/${getKeyValue(
                         item,
                         columnKey
                       )}`}

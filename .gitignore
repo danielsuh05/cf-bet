@@ -1,6 +1,8 @@
 # C# build files
 bin/
 obj/
+backend/backend/appsettings.json
+appsettings.Development.json
 
 # Logs
 logs

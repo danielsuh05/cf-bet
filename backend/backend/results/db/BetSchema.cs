@@ -12,6 +12,7 @@ public class BetSchema
     public string? UserId { get; set; } // set by authorization
     public string? Username { get; set; } // set by authorization
     public int ContestId { get; set; }
+    public long Date { get; set; }
 
     public BetType BetType { get; set; } // set by frontend
     public decimal InitialBet { get; set; } // set by frontend

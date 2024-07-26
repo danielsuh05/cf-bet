@@ -2,10 +2,12 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <InvariantGlobalization>true</InvariantGlobalization>
         <GenerateProgramFile>false</GenerateProgramFile>
+        <!--        <OutputType>Library</OutputType>-->
     </PropertyGroup>
 
     <ItemGroup>
@@ -25,8 +27,5 @@
         <PackageReference Include="xunit" Version="2.8.1"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="wwwroot\" />
-    </ItemGroup>
 
 </Project>

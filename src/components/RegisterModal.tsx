@@ -18,7 +18,8 @@ export default function RegisterModal() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [, setCookie] = useCookies(["jwt"]);
+  const [, setJwtCookie] = useCookies(["jwt"]);
+  const [, setUsernameCookie] = useCookies(["username"]);
 
   const handleRegister = async () => {
     try {
@@ -32,8 +33,14 @@ export default function RegisterModal() {
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + 14);
 
-      const { token } = response;
-      setCookie("jwt", token, { path: "/", expires: expirationDate });
+      setJwtCookie("jwt", response.token, {
+        path: "/",
+        expires: expirationDate,
+      });
+      setUsernameCookie("username", response.username, {
+        path: "/",
+        expires: expirationDate,
+      });
 
       // Close the modal
       onOpenChange();
@@ -96,7 +103,7 @@ export default function RegisterModal() {
                   Close
                 </Button>
                 <Button color="primary" onPress={handleRegister}>
-                  Sign in
+                  Register
                 </Button>
               </ModalFooter>
             </>

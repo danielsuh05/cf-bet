@@ -23,7 +23,7 @@ export default function NavBar() {
   const UserProfileButton = () => {
     return (
       <a
-        href={`http://localhost:8000/user/${username}`}
+        href={`http://localhost:5000/user/${username}`}
         target="_blank"
         rel="noopener noreferrer"
         className="text-blue-600 underline"
